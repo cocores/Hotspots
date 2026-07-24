@@ -882,11 +882,12 @@ function buildHotspotCardHTML(hs, i, mobile) {
     + detail;
 }
 
+var emptyStateHTML = document.getElementById('empty-state').outerHTML;
+
 function renderList() {
   var list = document.getElementById('hotspot-list');
-  var empty = document.getElementById('empty-state');
-  if (hotspots.length === 0) { list.innerHTML = ''; list.appendChild(empty); empty.style.display = 'block'; return; }
-  empty.style.display = 'none'; list.innerHTML = '';
+  if (hotspots.length === 0) { list.innerHTML = emptyStateHTML; return; }
+  list.innerHTML = '';
   hotspots.forEach(function(hs, i) {
     var card = document.createElement('div');
     card.className = 'hotspot-card';
