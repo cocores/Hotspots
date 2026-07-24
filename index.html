@@ -94,11 +94,24 @@ header{background:var(--panel);padding:0 2rem;height:60px;display:flex;align-ite
 .hc-num{width:26px;height:26px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
 .hc-info{flex:1;min-width:0}
 .hc-title{font-weight:500;font-size:13px;color:var(--panel-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hc-meta{font-size:11px;color:var(--panel-muted);margin-top:2px}
+.hc-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.hc-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.hc-badge-text{background:rgba(59,130,246,.15);color:#7db3ff}
+.hc-badge-media{background:rgba(34,197,94,.15);color:#6fdb9a}
+.hc-badge-link{background:rgba(249,115,22,.15);color:#ffab6b}
+.hc-badge-empty{background:var(--panel3);color:var(--panel-muted);font-weight:500}
 .hc-actions{display:flex;gap:4px}
 .hc-action-btn{width:26px;height:26px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--panel-muted);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .hc-action-btn:hover{background:rgba(255,255,255,.06);color:var(--panel-text)}
 .hc-action-btn.delete:hover{background:rgba(255,77,46,.15);color:var(--accent);border-color:rgba(255,77,46,.3)}
+.hc-detail{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07);font-size:12px;color:var(--panel-muted);line-height:1.5}
+.hc-detail-text{color:var(--panel-text);margin-bottom:8px;word-wrap:break-word}
+.hc-detail-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.hc-detail-row:last-child{margin-bottom:0}
+.hc-thumb{width:34px;height:34px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid rgba(255,255,255,.1)}
+.hc-detail-icon{width:34px;height:34px;border-radius:6px;background:var(--panel3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.hc-link{color:#7db3ff;text-decoration:none;font-size:12px;word-break:break-all}
+.hc-link:hover{text-decoration:underline}
 .panel-footer{padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
 .style-section-title{display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--panel-muted);margin-bottom:12px}
 .live-preview-pin{width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;transition:background .2s}
@@ -296,9 +309,11 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <div class="stats-row">
         <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-box"><div class="stat-num" id="stat-media">0</div><div class="stat-label">With Media</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-media">0</div><div class="stat-label">Media</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-box"><div class="stat-num" id="stat-desc">0</div><div class="stat-label">With Text</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-desc">0</div><div class="stat-label">Text</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-box"><div class="stat-num" id="stat-links">0</div><div class="stat-label">Links</div></div>
       </div>
     </div>
     <div class="panel-body" id="hotspot-list">
@@ -385,7 +400,9 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <div class="stat-divider"></div>
       <div class="stat-box"><div class="stat-num" id="m-stat-media">0</div><div class="stat-label">Media</div></div>
       <div class="stat-divider"></div>
-      <div class="stat-box"><div class="stat-num" id="m-stat-desc">0</div><div class="stat-label">With Text</div></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-desc">0</div><div class="stat-label">Text</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-links">0</div><div class="stat-label">Links</div></div>
     </div>
     <div id="mobile-hotspot-list">
       <div class="empty-state" style="padding:1.5rem 0;">
@@ -823,6 +840,48 @@ function deleteHotspot(id) {
   renderList(); updateCounter();
 }
 
+function hasText(hs) { return !!(hs.text && hs.text.trim()); }
+function hasMedia(hs) { return !!hs.media; }
+function hasLink(hs) { return !!hs.bhId; }
+
+function buildHotspotCardHTML(hs, i, mobile) {
+  var numAttr = mobile ? ' style="width:30px;height:30px;font-size:12px;"' : '';
+  var btnAttr = mobile ? ' style="width:32px;height:32px;font-size:14px;"' : '';
+
+  var badges = '';
+  if (hasText(hs)) badges += '<span class="hc-badge hc-badge-text">&#128221; Text</span>';
+  if (hasMedia(hs)) badges += '<span class="hc-badge hc-badge-media">' + (hs.media.type === 'image' ? '&#128444; Image' : '&#127925; Audio') + '</span>';
+  if (hasLink(hs)) badges += '<span class="hc-badge hc-badge-link">&#128279; Link</span>';
+  if (!badges) badges = '<span class="hc-badge hc-badge-empty">No content yet</span>';
+
+  var detail = '';
+  if (hasText(hs) || hasMedia(hs) || hasLink(hs)) {
+    detail += '<div class="hc-detail">';
+    if (hasText(hs)) detail += '<div class="hc-detail-text">' + escHTML(hs.text) + '</div>';
+    if (hasMedia(hs)) {
+      if (hs.media.type === 'image') {
+        detail += '<div class="hc-detail-row"><img class="hc-thumb" src="' + hs.media.dataURL + '" alt=""><span>' + escHTML(hs.media.name || 'Image') + '</span></div>';
+      } else {
+        detail += '<div class="hc-detail-row"><span class="hc-detail-icon">&#127925;</span><span>' + escHTML(hs.media.name || 'Audio file') + '</span></div>';
+      }
+    }
+    if (hasLink(hs)) {
+      detail += '<div class="hc-detail-row"><span class="hc-detail-icon">&#128279;</span><a class="hc-link" href="' + bhUrl(hs.bhId) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + escHTML(hs.bhId) + ' &#8599;</a></div>';
+    }
+    detail += '</div>';
+  }
+
+  return '<div class="hc-top">'
+    + '<div class="hc-num"' + numAttr + '>' + (i + 1) + '</div>'
+    + '<div class="hc-info"><div class="hc-title">' + escHTML(hs.title) + '</div>'
+    + '<div class="hc-badges">' + badges + '</div></div>'
+    + '<div class="hc-actions">'
+    + '<button class="hc-action-btn"' + btnAttr + ' onclick="event.stopPropagation();editHotspotFromList(' + hs.id + ')">&#9998;</button>'
+    + '<button class="hc-action-btn delete"' + btnAttr + ' onclick="event.stopPropagation();deleteHotspot(' + hs.id + ')">&#128465;</button>'
+    + '</div></div>'
+    + detail;
+}
+
 function renderList() {
   var list = document.getElementById('hotspot-list');
   var empty = document.getElementById('empty-state');
@@ -831,18 +890,7 @@ function renderList() {
   hotspots.forEach(function(hs, i) {
     var card = document.createElement('div');
     card.className = 'hotspot-card';
-    var meta = [];
-    if (hs.text) meta.push(hs.text.length + ' chars');
-    if (hs.media) meta.push(hs.media.type === 'image' ? 'image' : 'audio');
-    if (hs.bhId) meta.push('B&H');
-    card.innerHTML = '<div class="hc-top">' +
-      '<div class="hc-num">' + (i+1) + '</div>' +
-      '<div class="hc-info"><div class="hc-title">' + escHTML(hs.title) + '</div>' +
-      '<div class="hc-meta">' + (meta.join(' · ') || 'No description') + '</div></div>' +
-      '<div class="hc-actions">' +
-      '<button class="hc-action-btn" onclick="event.stopPropagation();editHotspotFromList(' + hs.id + ')">&#9998;</button>' +
-      '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteHotspot(' + hs.id + ')">&#128465;</button>' +
-      '</div></div>';
+    card.innerHTML = buildHotspotCardHTML(hs, i, false);
     list.appendChild(card);
   });
 }
@@ -855,8 +903,9 @@ function updateCounter() {
   badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
   setTimeout(function() { badge.classList.remove('bump'); }, 300);
   document.getElementById('stat-total').textContent = c;
-  document.getElementById('stat-media').textContent = hotspots.filter(function(h) { return h.media; }).length;
-  document.getElementById('stat-desc').textContent = hotspots.filter(function(h) { return h.text && h.text.trim(); }).length;
+  document.getElementById('stat-media').textContent = hotspots.filter(hasMedia).length;
+  document.getElementById('stat-desc').textContent = hotspots.filter(hasText).length;
+  document.getElementById('stat-links').textContent = hotspots.filter(hasLink).length;
   document.getElementById('export-btn').disabled = c === 0 || !backgroundDataURL;
 }
 
@@ -1498,24 +1547,14 @@ function renderMobileList() {
     var card = document.createElement('div');
     card.className = 'hotspot-card';
     card.style.cssText = 'padding:12px 14px;margin-bottom:10px;';
-    var meta = [];
-    if (hs.text) meta.push(hs.text.length + ' chars');
-    if (hs.media) meta.push(hs.media.type === 'image' ? 'image' : 'audio');
-    if (hs.bhId) meta.push('B&H');
-    card.innerHTML = '<div class="hc-top">'
-      + '<div class="hc-num" style="width:30px;height:30px;font-size:12px;">' + (i+1) + '</div>'
-      + '<div class="hc-info"><div class="hc-title">' + escHTML(hs.title) + '</div>'
-      + '<div class="hc-meta">' + (meta.join(' · ') || 'No description') + '</div></div>'
-      + '<div class="hc-actions">'
-      + '<button class="hc-action-btn" style="width:32px;height:32px;font-size:14px;" onclick="event.stopPropagation();editHotspotFromList(' + hs.id + ')">&#9998;</button>'
-      + '<button class="hc-action-btn delete" style="width:32px;height:32px;font-size:14px;" onclick="event.stopPropagation();deleteHotspot(' + hs.id + ')">&#128465;</button>'
-      + '</div></div>';
+    card.innerHTML = buildHotspotCardHTML(hs, i, true);
     list.appendChild(card);
   });
   // Update mobile stats
   document.getElementById('m-stat-total').textContent = hotspots.length;
-  document.getElementById('m-stat-media').textContent = hotspots.filter(function(h){return h.media;}).length;
-  document.getElementById('m-stat-desc').textContent = hotspots.filter(function(h){return h.text&&h.text.trim();}).length;
+  document.getElementById('m-stat-media').textContent = hotspots.filter(hasMedia).length;
+  document.getElementById('m-stat-desc').textContent = hotspots.filter(hasText).length;
+  document.getElementById('m-stat-links').textContent = hotspots.filter(hasLink).length;
   // Update nav badge
   document.getElementById('mnav-hotspots-label').textContent = hotspots.length > 0 ? 'Hotspots (' + hotspots.length + ')' : 'Hotspots';
 }
