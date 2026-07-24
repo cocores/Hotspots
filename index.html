@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hotspot Builder</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0e0e0f;--ink2:#4a4a55;--ink3:#8f8f9a;
+  --bg:#f5f4f0;--surface:#fff;
+  --accent:#ff4d2e;--accent2:#1a1aff;
+  --border:rgba(0,0,0,0.1);
+  --panel:#1c1c22;--panel2:#28282f;--panel3:#35353d;
+  --panel-text:#e8e8ee;--panel-muted:#8a8a96;
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--panel);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--panel-text);letter-spacing:-.5px;display:flex;align-items:center;gap:10px}
+.logo-dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.header-actions{display:flex;gap:10px;align-items:center}
+.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{opacity:.85;transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--panel2);color:var(--panel-text)}
+.btn-ghost{background:transparent;color:var(--panel-muted);border:1px solid var(--panel3)}
+.btn-ghost:hover{color:var(--panel-text);border-color:var(--panel-muted)}
+.btn-export{background:var(--accent2);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.app-body{flex:1;display:grid;grid-template-columns:1fr 320px;height:calc(100vh - 60px);overflow:hidden}
+.canvas-area{display:flex;flex-direction:column;background:#1a1a20;overflow:hidden}
+.canvas-toolbar{background:var(--panel);border-bottom:1px solid rgba(255,255,255,.05);padding:10px 1.5rem;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.toolbar-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--panel-muted)}
+.mode-pill{background:var(--panel2);border-radius:20px;padding:3px;display:flex;gap:2px}
+.mode-btn{font-size:12px;font-weight:500;padding:5px 14px;border-radius:16px;border:none;background:transparent;color:var(--panel-muted);cursor:pointer;transition:all .15s}
+.mode-btn.active{background:var(--accent);color:#fff}
+.canvas-viewport{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:2rem;cursor:crosshair}
+.canvas-viewport.view-mode{cursor:default}
+.image-canvas{position:relative;display:inline-block;line-height:0;border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.canvas-img{display:block;max-width:100%;border-radius:10px;user-select:none;pointer-events:none}
+.upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;width:600px;max-width:90%;height:380px;border:2px dashed rgba(255,255,255,.15);border-radius:20px;background:rgba(255,255,255,.03);cursor:pointer;transition:all .2s;text-align:center;padding:2rem}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(255,77,46,.05)}
+.upload-icon{width:64px;height:64px;background:rgba(255,77,46,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.upload-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--panel-text)}
+.upload-sub{font-size:14px;color:var(--panel-muted);line-height:1.6}
+.upload-types{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.type-tag{font-size:11px;font-weight:500;padding:3px 10px;background:rgba(255,255,255,.08);color:var(--panel-muted);border-radius:20px}
+.hotspot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10}
+.hotspot-pin{width:32px;height:32px;background:var(--accent);border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(255,77,46,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;transition:transform .2s;position:relative}
+.hotspot:hover .hotspot-pin{transform:scale(1.2)}
+.hotspot-pin::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,77,46,.4);animation:hs-pulse-default 2s ease-out infinite}
+@keyframes hs-pulse-default{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.hs-tooltip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%) translateY(8px);background:#fff;border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.2);padding:14px 16px;min-width:200px;max-width:260px;pointer-events:none;opacity:0;transition:all .2s ease;z-index:20;white-space:normal;line-height:1.4}
+.hs-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#fff}
+.canvas-viewport.view-mode .hotspot:hover .hs-tooltip,.hotspot.tapped .hs-tooltip{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.hs-tooltip-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--ink);margin-bottom:6px}
+.hs-tooltip-text{font-size:13px;color:var(--ink2);line-height:1.5;margin-bottom:8px}
+.hs-tooltip-media{border-radius:8px;overflow:hidden;margin-bottom:8px}
+.hs-tooltip-media img{width:100%;display:block}
+.hs-tooltip-audio{display:flex;align-items:center;gap:8px;background:#f5f4f0;border-radius:8px;padding:8px 10px}
+.hs-audio-play{width:28px;height:28px;background:var(--accent);border-radius:50%;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.hs-audio-label{font-size:12px;color:var(--ink2);font-weight:500}
+.hs-bh-btn{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.hs-bh-btn:hover{opacity:.85}
+.side-panel{background:var(--panel);border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;overflow:hidden}
+.panel-header{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.panel-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--panel-text)}
+.panel-body{flex:1;overflow-y:auto;padding:1rem}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--panel3);border-radius:2px}
+.count-badge{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--accent);line-height:1;transition:all .2s ease}
+.count-badge.bump{transform:scale(1.3);color:#fff}
+.stats-row{display:flex;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 0;margin-top:10px}
+.stat-box{flex:1;text-align:center}
+.stat-num{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--panel-text);line-height:1;margin-bottom:3px}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--panel-muted);font-weight:500}
+.stat-divider{width:1px;height:28px;background:var(--panel3);flex-shrink:0}
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--panel-muted)}
+.empty-icon{font-size:36px;margin-bottom:10px;opacity:.5}
+.empty-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--panel-muted);margin-bottom:6px}
+.empty-text{font-size:12px;line-height:1.6}
+.hotspot-card{background:var(--panel2);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid transparent;transition:all .15s;cursor:pointer}
+.hotspot-card:hover{border-color:rgba(255,255,255,.1)}
+.hc-top{display:flex;align-items:center;gap:8px}
+.hc-num{width:26px;height:26px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+.hc-info{flex:1;min-width:0}
+.hc-title{font-weight:500;font-size:13px;color:var(--panel-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc-meta{font-size:11px;color:var(--panel-muted);margin-top:2px}
+.hc-actions{display:flex;gap:4px}
+.hc-action-btn{width:26px;height:26px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--panel-muted);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.hc-action-btn:hover{background:rgba(255,255,255,.06);color:var(--panel-text)}
+.hc-action-btn.delete:hover{background:rgba(255,77,46,.15);color:var(--accent);border-color:rgba(255,77,46,.3)}
+.panel-footer{padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.style-section-title{display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--panel-muted);margin-bottom:12px}
+.live-preview-pin{width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;transition:background .2s}
+.live-preview-pin::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(255,77,46,.5);animation:preview-pulse 2s ease-out infinite}
+@keyframes preview-pulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.7);opacity:0}}
+.preview-bounce{animation:prev-bounce .6s ease infinite alternate!important}
+@keyframes prev-bounce{from{transform:translateY(0)}to{transform:translateY(-5px)}}
+.preview-bounce::after{display:none!important}
+.preview-ripple::after{animation:prev-ripple 1.2s linear infinite!important}
+@keyframes prev-ripple{0%{transform:scale(.8);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+.preview-none::after{display:none!important}
+.style-row{margin-bottom:12px}
+.style-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--panel-muted);margin-bottom:7px}
+.color-swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatch{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;position:relative;flex-shrink:0}
+.swatch:hover{transform:scale(1.15)}
+.swatch.active{border-color:#fff;box-shadow:0 0 0 2px var(--panel-muted)}
+.swatch-custom{background:var(--panel3)!important;display:flex;align-items:center;justify-content:center;color:var(--panel-muted);font-size:14px;font-weight:600;overflow:hidden}
+.anim-options{display:flex;gap:5px;flex-wrap:wrap}
+.anim-btn{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;border:1px solid var(--panel3);background:transparent;color:var(--panel-muted);cursor:pointer;transition:all .15s}
+.anim-btn:hover{color:var(--panel-text);border-color:var(--panel-muted)}
+.anim-btn.active{background:var(--panel3);color:var(--panel-text);border-color:transparent}
+.speed-control{display:flex;align-items:center;gap:8px}
+.speed-tag{font-size:10px;color:var(--panel-muted);white-space:nowrap}
+input[type=range]{-webkit-appearance:none;height:3px;background:var(--panel3);border-radius:2px;outline:none;cursor:pointer;flex:1}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);animation:fade-in .15s ease}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.modal{background:var(--surface);border-radius:20px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;animation:slide-up .2s ease;box-shadow:0 40px 100px rgba(0,0,0,.4)}
+@keyframes slide-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal::-webkit-scrollbar{width:4px}
+.modal::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px}
+.modal-header{padding:1.5rem 1.5rem 0;display:flex;align-items:flex-start;justify-content:space-between}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--ink)}
+.modal-sub{font-size:13px;color:var(--ink3);margin-top:4px}
+.modal-close{width:32px;height:32px;background:var(--bg);border:none;border-radius:50%;cursor:pointer;font-size:16px;color:var(--ink2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.modal-close:hover{background:#e8e8e8}
+.modal-body{padding:1.5rem}
+.modal-footer{padding:0 1.5rem 1.5rem;display:flex;gap:10px;justify-content:flex-end}
+.form-group{margin-bottom:1.25rem}
+label{display:block;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:6px}
+input[type="text"],textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);transition:border-color .15s;outline:none}
+input[type="text"]:focus,textarea:focus{border-color:var(--accent2)}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+.char-count{text-align:right;font-size:12px;color:var(--ink3);margin-top:4px}
+.char-count.warn{color:var(--accent)}
+.section-divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+.media-upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.media-type-btn{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px 8px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s}
+.media-type-btn:hover{border-color:var(--accent2);background:rgba(26,26,255,.03)}
+.media-type-btn.has-file{border-style:solid;border-color:var(--accent2);background:rgba(26,26,255,.05)}
+.media-type-icon{font-size:22px;margin-bottom:5px}
+.media-type-label{font-size:11px;font-weight:500;color:var(--ink2)}
+.media-preview{margin-top:12px}
+.media-preview img{max-width:100%;border-radius:8px;display:block;max-height:150px}
+.media-preview .audio-info{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:8px;padding:10px 14px}
+.media-preview .audio-icon{font-size:20px}
+.media-preview .audio-name{font-size:13px;color:var(--ink2)}
+.hidden-input{display:none}
+.bh-field-row{display:flex;gap:8px;align-items:center}
+.bh-link-preview-box{display:none;margin-top:8px;font-size:12px;color:var(--ink3);background:var(--bg);border-radius:6px;padding:6px 10px;word-break:break-all}
+.export-code{background:#0d0d14;border-radius:12px;padding:1rem;font-family:'Courier New',monospace;font-size:12px;color:#a8b2d8;overflow-x:auto;max-height:300px;overflow-y:auto;line-height:1.6;white-space:pre}
+.export-code::-webkit-scrollbar{width:4px;height:4px}
+.export-code::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.export-tabs{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.export-tab{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--bg);cursor:pointer;text-align:left;transition:all .15s;font-family:'DM Sans',sans-serif}
+.export-tab:hover{border-color:var(--accent2)}
+.export-tab.active{border-color:var(--accent2);background:rgba(26,26,255,.06)}
+.export-tab-icon{font-size:13px;font-weight:700;width:36px;height:36px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border);color:var(--ink2);font-family:monospace}
+.export-tab.active .export-tab-icon{border-color:var(--accent2);color:var(--accent2)}
+.export-tab-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.export-tab-desc{font-size:11px;color:var(--ink3)}
+.export-info-bar{background:rgba(26,26,255,.05);border:1px solid rgba(26,26,255,.15);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+.export-info-icon{flex-shrink:0;color:var(--accent2);font-weight:600}
+.export-info-bar code{font-family:monospace;background:rgba(26,26,255,.1);padding:1px 5px;border-radius:4px;font-size:12px}
+
+/* ── MOBILE BOTTOM NAV ─────────────────────────────────────────────────────── */
+.mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid rgba(255,255,255,.08);z-index:200;padding:0 0 env(safe-area-inset-bottom,0);}
+.mobile-nav-tabs{display:flex;}
+.mobile-nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;border:none;background:transparent;color:var(--panel-muted);cursor:pointer;font-size:10px;font-weight:500;font-family:'DM Sans',sans-serif;gap:4px;transition:color .15s;}
+.mobile-nav-tab.active{color:var(--accent);}
+.mobile-nav-tab-icon{font-size:20px;line-height:1;}
+
+/* ── MOBILE SHEET ──────────────────────────────────────────────────────────── */
+.mobile-sheet{display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--panel);border-radius:20px 20px 0 0;box-shadow:0 -12px 48px rgba(0,0,0,.4);transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:80vh;overflow:hidden;flex-direction:column;}
+.mobile-sheet.open{transform:translateY(0);}
+.mobile-sheet-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:12px auto 0;}
+.mobile-sheet-header{padding:12px 1.25rem 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+.mobile-sheet-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--panel-text);}
+.mobile-sheet-close{background:rgba(255,255,255,.08);border:none;border-radius:50%;width:28px;height:28px;color:var(--panel-muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.mobile-sheet-body{overflow-y:auto;flex:1;padding:1rem 1.25rem;}
+.mobile-sheet-body::-webkit-scrollbar{display:none;}
+
+/* ── MOBILE CANVAS TOOLBAR ─────────────────────────────────────────────────── */
+.mobile-toolbar-hint{display:none;font-size:11px;color:var(--panel-muted);text-align:center;padding:6px 1rem;background:rgba(0,0,0,.3);}
+
+/* ── MOBILE TOOLTIP (tap-activated) ────────────────────────────────────────── */
+.hotspot.tapped .hs-tooltip{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+
+/* ── MOBILE UPLOAD ZONE ─────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  /* Layout shift */
+  .app-body{grid-template-columns:1fr;height:calc(100vh - 56px - 62px);}
+  .side-panel{display:none;}
+  .canvas-toolbar{padding:8px 1rem;}
+  .toolbar-label{display:none;}
+  header{height:56px;padding:0 1rem;}
+  .logo{font-size:16px;}
+  .btn-sm{padding:5px 10px;font-size:11px;}
+
+  /* Upload zone mobile */
+  .upload-zone{width:90%;height:260px;gap:12px;padding:1.5rem;}
+  .upload-icon{width:48px;height:48px;font-size:22px;}
+  .upload-title{font-size:18px;}
+  .upload-sub{font-size:13px;}
+
+  /* Canvas viewport */
+  .canvas-viewport{padding:1rem;cursor:default;}
+
+  /* Hotspot tooltip — wider on mobile */
+  .hs-tooltip{min-width:180px;max-width:min(260px,80vw);}
+
+  /* Mode pill */
+  .mode-btn{padding:5px 10px;font-size:11px;}
+
+  /* Mobile nav + sheet visible */
+  .mobile-bottom-nav{display:block;}
+  .mobile-sheet{display:flex;}
+  .mobile-toolbar-hint{display:block;}
+
+  /* Modals full-width on mobile */
+  .modal{width:100%;max-width:100%;border-radius:20px 20px 0 0;position:fixed;bottom:0;left:0;max-height:92vh;margin:0;animation:slide-up-mobile .25s ease;}
+  .modal-overlay{align-items:flex-end;}
+  @keyframes slide-up-mobile{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Export tabs stack on mobile */
+  .export-tabs{grid-template-columns:1fr 1fr;gap:8px;}
+
+  /* Bottom padding for nav */
+  .canvas-viewport{padding-bottom:1rem;}
+}
+
+@media(max-width:480px){
+  .upload-zone{height:220px;}
+  .upload-title{font-size:16px;}
+  .mode-btn{padding:4px 8px;font-size:10px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>Hotspot Builder</div>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="resetTool()">&#8635; Reset</button>
+    <button class="btn btn-export btn-sm" onclick="openExport()" id="export-btn" disabled>Export</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <div class="canvas-area">
+    <div class="canvas-toolbar">
+      <span class="toolbar-label">Mode</span>
+      <div class="mode-pill">
+        <button class="mode-btn active" id="mode-add" onclick="setMode('add')">+ Add Hotspot</button>
+        <button class="mode-btn" id="mode-view" onclick="setMode('view')">Preview</button>
+      </div>
+      <span style="flex:1"></span>
+      <span id="toolbar-hint" style="font-size:12px;color:#5f5f6e;">Upload an image to begin</span>
+    </div>
+    <div class="mobile-toolbar-hint" id="mobile-hint">Tap image to place a hotspot &bull; Tap a pin to view info</div>
+    <div class="canvas-viewport" id="canvas-viewport" onclick="handleCanvasClick(event)">
+      <div class="upload-zone" id="upload-zone"
+        ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+        onclick="document.getElementById('main-img-input').click();event.stopPropagation();">
+        <div class="upload-icon">&#128444;</div>
+        <div class="upload-title">Drop your image here</div>
+        <div class="upload-sub">Or click to browse. JPEG, PNG, WebP, GIF.</div>
+        <div class="upload-types">
+          <span class="type-tag">JPEG</span><span class="type-tag">PNG</span><span class="type-tag">WebP</span><span class="type-tag">GIF</span>
+        </div>
+      </div>
+      <div class="image-canvas" id="image-canvas" style="display:none;">
+        <img class="canvas-img" id="canvas-img" src="" alt="Background">
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="panel-title">Hotspots</div>
+        <div class="count-badge" id="count-badge">0</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-box"><div class="stat-num" id="stat-media">0</div><div class="stat-label">With Media</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-box"><div class="stat-num" id="stat-desc">0</div><div class="stat-label">With Text</div></div>
+      </div>
+    </div>
+    <div class="panel-body" id="hotspot-list">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">&#9711;</div>
+        <div class="empty-title">No hotspots yet</div>
+        <div class="empty-text">Upload an image then click anywhere on it to place a hotspot.</div>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <div class="style-section-title">
+        <span>Hotspot Style</span>
+        <div class="live-preview-pin" id="preview-pin">1</div>
+      </div>
+      <div class="style-row">
+        <div class="style-label">Color</div>
+        <div class="color-swatches">
+          <div class="swatch active" style="background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
+          <div class="swatch" style="background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
+          <div class="swatch" style="background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
+          <div class="swatch" style="background:#f59e0b;" onclick="setHotspotColor('#f59e0b',this)"></div>
+          <div class="swatch" style="background:#ec4899;" onclick="setHotspotColor('#ec4899',this)"></div>
+          <div class="swatch" style="background:#0ea5e9;" onclick="setHotspotColor('#0ea5e9',this)"></div>
+          <div class="swatch swatch-custom" id="swatch-custom" onclick="document.getElementById('custom-color-input').click()">
+            <span>+</span>
+            <input type="color" id="custom-color-input" style="opacity:0;position:absolute;width:0;height:0;" oninput="setHotspotColor(this.value,document.getElementById('swatch-custom'))">
+          </div>
+        </div>
+      </div>
+      <div class="style-row">
+        <div class="style-label">Animation</div>
+        <div class="anim-options">
+          <button class="anim-btn active" onclick="setAnimation('pulse',this)">Pulse</button>
+          <button class="anim-btn" onclick="setAnimation('ripple',this)">Ripple</button>
+          <button class="anim-btn" onclick="setAnimation('bounce',this)">Bounce</button>
+          <button class="anim-btn" onclick="setAnimation('none',this)">None</button>
+        </div>
+      </div>
+      <div class="style-row" id="speed-row">
+        <div class="style-label">Speed</div>
+        <div class="speed-control">
+          <span class="speed-tag">Slow</span>
+          <input type="range" id="pulse-speed" min="0.5" max="4" step="0.1" value="2" oninput="setPulseSpeed(this.value)">
+          <span class="speed-tag">Fast</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav">
+  <div class="mobile-nav-tabs">
+    <button class="mobile-nav-tab active" id="mnav-canvas" onclick="mobileNavTo('canvas')">
+      <span class="mobile-nav-tab-icon">&#128444;</span>
+      Canvas
+    </button>
+    <button class="mobile-nav-tab" id="mnav-hotspots" onclick="mobileNavTo('hotspots')">
+      <span class="mobile-nav-tab-icon">&#9711;</span>
+      <span id="mnav-hotspots-label">Hotspots</span>
+    </button>
+    <button class="mobile-nav-tab" id="mnav-style" onclick="mobileNavTo('style')">
+      <span class="mobile-nav-tab-icon">&#127752;</span>
+      Style
+    </button>
+    <button class="mobile-nav-tab" id="mnav-export" onclick="mobileNavTo('export')" id="mnav-export-tab" disabled>
+      <span class="mobile-nav-tab-icon">&#8659;</span>
+      Export
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE SHEET: HOTSPOTS -->
+<div class="mobile-sheet" id="mobile-sheet-hotspots">
+  <div class="mobile-sheet-handle"></div>
+  <div class="mobile-sheet-header">
+    <div class="mobile-sheet-title">Hotspots</div>
+    <button class="mobile-sheet-close" onclick="closeMobileSheet('hotspots')">&#10005;</button>
+  </div>
+  <div class="mobile-sheet-body">
+    <div class="stats-row" style="margin-top:0;margin-bottom:1rem;">
+      <div class="stat-box"><div class="stat-num" id="m-stat-total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-media">0</div><div class="stat-label">Media</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-desc">0</div><div class="stat-label">With Text</div></div>
+    </div>
+    <div id="mobile-hotspot-list">
+      <div class="empty-state" style="padding:1.5rem 0;">
+        <div class="empty-icon">&#9711;</div>
+        <div class="empty-title">No hotspots yet</div>
+        <div class="empty-text">Tap anywhere on your image to add a hotspot.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE SHEET: STYLE -->
+<div class="mobile-sheet" id="mobile-sheet-style">
+  <div class="mobile-sheet-handle"></div>
+  <div class="mobile-sheet-header">
+    <div class="mobile-sheet-title">Hotspot Style</div>
+    <button class="mobile-sheet-close" onclick="closeMobileSheet('style')">&#10005;</button>
+  </div>
+  <div class="mobile-sheet-body">
+    <div class="style-row">
+      <div class="style-label">Color</div>
+      <div class="color-swatches" style="gap:10px;">
+        <div class="swatch active" style="width:30px;height:30px;background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
+        <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
+        <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
+        <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
+        <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setHotspotColor('#f59e0b',this)"></div>
+        <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setHotspotColor('#ec4899',this)"></div>
+        <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setHotspotColor('#0ea5e9',this)"></div>
+        <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input').click()"><span>+</span></div>
+      </div>
+    </div>
+    <div class="style-row">
+      <div class="style-label">Animation</div>
+      <div class="anim-options" style="gap:8px;">
+        <button class="anim-btn active" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('pulse',this)">Pulse</button>
+        <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('ripple',this)">Ripple</button>
+        <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('bounce',this)">Bounce</button>
+        <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('none',this)">None</button>
+      </div>
+    </div>
+    <div class="style-row" id="m-speed-row">
+      <div class="style-label">Animation Speed</div>
+      <div class="speed-control">
+        <span class="speed-tag">Slow</span>
+        <input type="range" id="m-pulse-speed" min="0.5" max="4" step="0.1" value="2" oninput="setPulseSpeed(this.value);document.getElementById('pulse-speed').value=this.value;">
+        <span class="speed-tag">Fast</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+      <div class="live-preview-pin" id="m-preview-pin" style="width:34px;height:34px;font-size:13px;">1</div>
+      <span style="font-size:12px;color:var(--panel-muted);">Live preview</span>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="main-img-input" class="hidden-input" accept="image/*" onchange="handleMainImage(event)">
+<input type="file" id="media-img-input" class="hidden-input" accept="image/*,image/gif" onchange="handleMediaUpload(event,'image')">
+<input type="file" id="media-audio-input" class="hidden-input" accept="audio/*" onchange="handleMediaUpload(event,'audio')">
+
+<!-- HOTSPOT MODAL -->
+<div class="modal-overlay" id="hotspot-modal" style="display:none;" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Add Hotspot</div>
+        <div class="modal-sub" id="modal-number-label">Hotspot #1</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="hs-title">Title <span style="color:var(--accent);">*</span></label>
+        <input type="text" id="hs-title" placeholder="e.g. Main Entrance, Key Feature..." maxlength="80">
+      </div>
+      <div class="form-group">
+        <label for="hs-text">Description <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+        <textarea id="hs-text" placeholder="Write a short description..." maxlength="300" oninput="updateCharCount()"></textarea>
+        <div class="char-count" id="char-count">0 / 300</div>
+      </div>
+      <hr class="section-divider">
+      <div class="form-group">
+        <label>Media <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+        <div class="media-upload-grid">
+          <div class="media-type-btn" id="img-btn" onclick="document.getElementById('media-img-input').click()">
+            <div class="media-type-icon">&#128444;</div>
+            <div class="media-type-label">Image / GIF</div>
+          </div>
+          <div class="media-type-btn" id="audio-btn" onclick="document.getElementById('media-audio-input').click()">
+            <div class="media-type-icon">&#127925;</div>
+            <div class="media-type-label">Audio</div>
+          </div>
+          <div class="media-type-btn" id="clear-media-btn" onclick="clearMedia()" style="opacity:0.4;pointer-events:none;">
+            <div class="media-type-icon">&#10005;</div>
+            <div class="media-type-label">Remove</div>
+          </div>
+        </div>
+        <div class="media-preview" id="media-preview" style="display:none;"></div>
+      </div>
+      <hr class="section-divider">
+      <div class="form-group">
+        <label for="hs-bh-id">B&amp;H Product ID <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+        <div class="bh-field-row">
+          <input type="text" id="hs-bh-id" placeholder="e.g. 1873756-REG" style="flex:1;" oninput="previewBHLink()">
+          <button type="button" class="btn btn-secondary btn-sm" id="bh-preview-btn" onclick="testBHLink()" style="flex-shrink:0;opacity:0.4;pointer-events:none;">Preview &#8599;</button>
+        </div>
+        <div class="bh-link-preview-box" id="bh-link-preview"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHotspot()">Save Hotspot &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="export-modal" style="display:none;" onclick="closeExportOnOverlay(event)">
+  <div class="modal" style="width:660px;">
+    <div class="modal-header">
+      <div><div class="modal-title">Export</div><div class="modal-sub">Choose your export format</div></div>
+      <button class="modal-close" onclick="closeExport()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-tabs">
+        <button class="export-tab active" id="tab-html" onclick="switchExportTab('html')">
+          <span class="export-tab-icon">&#128196;</span>
+          <div><div class="export-tab-title">HTML File</div><div class="export-tab-desc">Standalone page</div></div>
+        </button>
+        <button class="export-tab" id="tab-embed" onclick="switchExportTab('embed')">
+          <span class="export-tab-icon">&lt;/&gt;</span>
+          <div><div class="export-tab-title">Embed Code</div><div class="export-tab-desc">Paste into any page</div></div>
+        </button>
+        <button class="export-tab" id="tab-webp" onclick="switchExportTab('webp')">
+          <span class="export-tab-icon">&#128444;</span>
+          <div><div class="export-tab-title">WebP Image</div><div class="export-tab-desc">Flat image with pins</div></div>
+        </button>
+        <button class="export-tab" id="tab-claude" onclick="switchExportTab('claude')">
+          <span class="export-tab-icon" style="font-size:16px;">&#9889;</span>
+          <div><div class="export-tab-title">Claude Code</div><div class="export-tab-desc">Paste prompt + data</div></div>
+        </button>
+      </div>
+      <div id="export-info-html" class="export-info-bar"><span class="export-info-icon">i</span>Self-contained <code>.html</code> file with all assets embedded.</div>
+      <div id="export-info-embed" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Drop-in snippet. Paste anywhere in your page <code>&lt;body&gt;</code>.</div>
+      <div id="export-info-webp" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Static <code>.webp</code> with pins drawn on — great for docs and social sharing.</div>
+      <div id="export-info-claude" class="export-info-bar" style="display:none;"><span class="export-info-icon">&#9889;</span>Copy this prompt into <strong>Claude Code</strong> — it contains your hotspot data, image, and full instructions to build or extend the project in any framework.</div>
+      <div id="export-preview" class="export-code"></div>
+      <div id="webp-preview-wrap" style="display:none;text-align:center;margin-top:4px;">
+        <img id="webp-preview-img" style="max-width:100%;max-height:260px;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.12);" alt="WebP preview">
+        <div style="font-size:12px;color:var(--ink3);margin-top:8px;">Preview — click Download to save</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeExport()">Close</button>
+      <button class="btn btn-primary" id="copy-btn" onclick="copyExport()">Copy to Clipboard</button>
+      <button class="btn btn-export" id="download-btn" onclick="downloadExport()">&#8595; Download .html</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var hotspots = [];
+var mode = 'add';
+var pendingX = 0, pendingY = 0;
+var editingId = null;
+var currentMedia = null;
+var backgroundDataURL = null;
+var hsColor = '#ff4d2e';
+var hsAnimation = 'pulse';
+var hsPulseSpeed = 2.0;
+var exportTab = 'html';
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-add').classList.toggle('active', m === 'add');
+  document.getElementById('mode-view').classList.toggle('active', m === 'view');
+  document.getElementById('canvas-viewport').classList.toggle('view-mode', m === 'view');
+  document.getElementById('toolbar-hint').textContent =
+    m === 'add' ? 'Click on image to place a hotspot' : 'Hover over pins to see tooltips';
+}
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  var file = e.dataTransfer.files[0];
+  if (file && file.type.indexOf('image/') === 0) loadMainImage(file);
+}
+function handleMainImage(e) { var f = e.target.files[0]; if (f) loadMainImage(f); }
+function loadMainImage(file) {
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    backgroundDataURL = ev.target.result;
+    document.getElementById('canvas-img').src = ev.target.result;
+    document.getElementById('upload-zone').style.display = 'none';
+    document.getElementById('image-canvas').style.display = 'inline-block';
+    document.getElementById('toolbar-hint').textContent = 'Click on image to place a hotspot';
+    document.getElementById('export-btn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleCanvasClick(e) {
+  if (mode !== 'add' || !backgroundDataURL) return;
+  if (e.target.closest('.hotspot')) return;
+  var img = document.getElementById('canvas-img');
+  var rect = img.getBoundingClientRect();
+  var xPct = ((e.clientX - rect.left) / rect.width) * 100;
+  var yPct = ((e.clientY - rect.top) / rect.height) * 100;
+  if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
+  pendingX = xPct; pendingY = yPct; editingId = null;
+  openModal();
+}
+
+function openModal() {
+  document.getElementById('hs-title').value = '';
+  document.getElementById('hs-text').value = '';
+  document.getElementById('hs-bh-id').value = '';
+  document.getElementById('bh-link-preview').style.display = 'none';
+  document.getElementById('bh-preview-btn').style.opacity = '0.4';
+  document.getElementById('bh-preview-btn').style.pointerEvents = 'none';
+  document.getElementById('char-count').textContent = '0 / 300';
+  document.getElementById('char-count').classList.remove('warn');
+  currentMedia = null;
+  document.getElementById('media-preview').style.display = 'none';
+  document.getElementById('media-preview').innerHTML = '';
+  document.getElementById('img-btn').classList.remove('has-file');
+  document.getElementById('audio-btn').classList.remove('has-file');
+  document.getElementById('clear-media-btn').style.opacity = '0.4';
+  document.getElementById('clear-media-btn').style.pointerEvents = 'none';
+  if (editingId !== null) {
+    var hs = null;
+    for (var i = 0; i < hotspots.length; i++) { if (hotspots[i].id === editingId) { hs = hotspots[i]; break; } }
+    if (hs) {
+      document.getElementById('hs-title').value = hs.title;
+      document.getElementById('hs-text').value = hs.text || '';
+      updateCharCount();
+      if (hs.bhId) { document.getElementById('hs-bh-id').value = hs.bhId; previewBHLink(); }
+      if (hs.media) {
+        currentMedia = hs.media;
+        showMediaPreview(hs.media);
+        document.getElementById(hs.media.type === 'image' ? 'img-btn' : 'audio-btn').classList.add('has-file');
+        document.getElementById('clear-media-btn').style.opacity = '1';
+        document.getElementById('clear-media-btn').style.pointerEvents = 'auto';
+      }
+      var idx = 0;
+      for (var j = 0; j < hotspots.length; j++) { if (hotspots[j].id === editingId) { idx = j; break; } }
+      document.getElementById('modal-number-label').textContent = 'Editing Hotspot #' + (idx + 1);
+    }
+  } else {
+    document.getElementById('modal-number-label').textContent = 'Hotspot #' + (hotspots.length + 1);
+  }
+  document.getElementById('hotspot-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('hs-title').focus(); }, 100);
+}
+function closeModal() { document.getElementById('hotspot-modal').style.display = 'none'; editingId = null; }
+function closeModalOnOverlay(e) { if (e.target === document.getElementById('hotspot-modal')) closeModal(); }
+function updateCharCount() {
+  var len = document.getElementById('hs-text').value.length;
+  var el = document.getElementById('char-count');
+  el.textContent = len + ' / 300';
+  el.classList.toggle('warn', len > 260);
+}
+
+function handleMediaUpload(e, type) {
+  var file = e.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    currentMedia = { type: type, dataURL: ev.target.result, name: file.name };
+    showMediaPreview(currentMedia);
+    document.getElementById('img-btn').classList.toggle('has-file', type === 'image');
+    document.getElementById('audio-btn').classList.toggle('has-file', type === 'audio');
+    document.getElementById('clear-media-btn').style.opacity = '1';
+    document.getElementById('clear-media-btn').style.pointerEvents = 'auto';
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+function showMediaPreview(media) {
+  var prev = document.getElementById('media-preview');
+  prev.style.display = 'block';
+  if (media.type === 'image') prev.innerHTML = '<img src="' + media.dataURL + '" alt="">';
+  else prev.innerHTML = '<div class="audio-info"><div class="audio-icon">&#127925;</div><div class="audio-name">' + media.name + '</div></div>';
+}
+function clearMedia() {
+  currentMedia = null;
+  document.getElementById('media-preview').style.display = 'none';
+  document.getElementById('media-preview').innerHTML = '';
+  document.getElementById('img-btn').classList.remove('has-file');
+  document.getElementById('audio-btn').classList.remove('has-file');
+  document.getElementById('clear-media-btn').style.opacity = '0.4';
+  document.getElementById('clear-media-btn').style.pointerEvents = 'none';
+}
+
+function bhUrl(id) { return 'https://www.bhphotovideo.com/c/product/' + id + '/na.html'; }
+function previewBHLink() {
+  var val = document.getElementById('hs-bh-id').value.trim();
+  var box = document.getElementById('bh-link-preview');
+  var btn = document.getElementById('bh-preview-btn');
+  if (val) { box.style.display = 'block'; box.textContent = bhUrl(val); btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+  else { box.style.display = 'none'; btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+}
+function testBHLink() { var v = document.getElementById('hs-bh-id').value.trim(); if (v) window.open(bhUrl(v), '_blank'); }
+
+function saveHotspot() {
+  var title = document.getElementById('hs-title').value.trim();
+  if (!title) { document.getElementById('hs-title').style.borderColor = '#ff4d2e'; document.getElementById('hs-title').focus(); return; }
+  document.getElementById('hs-title').style.borderColor = '';
+  var text = document.getElementById('hs-text').value.trim();
+  var bhId = document.getElementById('hs-bh-id').value.trim().toUpperCase() || null;
+  if (editingId !== null) {
+    var hs = null;
+    for (var i = 0; i < hotspots.length; i++) { if (hotspots[i].id === editingId) { hs = hotspots[i]; break; } }
+    if (hs) { hs.title = title; hs.text = text; hs.media = currentMedia; hs.bhId = bhId; rebuildHotspotEl(hs); }
+  } else {
+    var newHs = { id: Date.now(), x: pendingX, y: pendingY, title: title, text: text, media: currentMedia, bhId: bhId };
+    hotspots.push(newHs);
+    createHotspotEl(newHs);
+  }
+  closeModal(); renderList(); updateCounter();
+}
+
+function buildTooltipHTML(hs) {
+  var mediaHTML = '';
+  if (hs.media) {
+    if (hs.media.type === 'image') mediaHTML = '<div class="hs-tooltip-media"><img src="' + hs.media.dataURL + '" alt=""></div>';
+    else mediaHTML = '<div class="hs-tooltip-audio"><button class="hs-audio-play" onclick="toggleAudio(this,\'' + hs.id + '\')">&#9654;</button><span class="hs-audio-label">' + hs.media.name + '</span><audio id="hsa-' + hs.id + '" src="' + hs.media.dataURL + '"></audio></div>';
+  }
+  var bhBtn = hs.bhId ? '<a class="hs-bh-btn" href="' + bhUrl(hs.bhId) + '" target="_blank" rel="noopener">See Details &#8599;</a>' : '';
+  return '<div class="hs-tooltip"><div class="hs-tooltip-title">' + escHTML(hs.title) + '</div>' +
+    (hs.text ? '<div class="hs-tooltip-text">' + escHTML(hs.text) + '</div>' : '') +
+    mediaHTML + bhBtn + '</div>';
+}
+
+function createHotspotEl(hs) {
+  var idx = 0;
+  for (var i = 0; i < hotspots.length; i++) { if (hotspots[i].id === hs.id) { idx = i + 1; break; } }
+  var el = document.createElement('div');
+  el.className = 'hotspot'; el.id = 'hs-' + hs.id;
+  el.style.left = hs.x + '%'; el.style.top = hs.y + '%';
+  el.innerHTML = '<div class="hotspot-pin">' + idx + '</div>' + buildTooltipHTML(hs);
+  el.addEventListener('click', function(e) { e.stopPropagation(); if (mode === 'add') { editingId = hs.id; openModal(); } });
+  document.getElementById('image-canvas').appendChild(el);
+}
+
+function rebuildHotspotEl(hs) {
+  var el = document.getElementById('hs-' + hs.id); if (!el) return;
+  var idx = 0;
+  for (var i = 0; i < hotspots.length; i++) { if (hotspots[i].id === hs.id) { idx = i + 1; break; } }
+  el.innerHTML = '<div class="hotspot-pin">' + idx + '</div>' + buildTooltipHTML(hs);
+}
+
+function toggleAudio(btn, id) {
+  var a = document.getElementById('hsa-' + id); if (!a) return;
+  if (a.paused) { a.play(); btn.textContent = '||'; } else { a.pause(); btn.textContent = '&#9654;'; }
+}
+
+function deleteHotspot(id) {
+  hotspots = hotspots.filter(function(h) { return h.id !== id; });
+  var el = document.getElementById('hs-' + id); if (el) el.remove();
+  hotspots.forEach(function(h, i) { var p = document.querySelector('#hs-' + h.id + ' .hotspot-pin'); if (p) p.textContent = i + 1; });
+  renderList(); updateCounter();
+}
+
+function renderList() {
+  var list = document.getElementById('hotspot-list');
+  var empty = document.getElementById('empty-state');
+  if (hotspots.length === 0) { list.innerHTML = ''; list.appendChild(empty); empty.style.display = 'block'; return; }
+  empty.style.display = 'none'; list.innerHTML = '';
+  hotspots.forEach(function(hs, i) {
+    var card = document.createElement('div');
+    card.className = 'hotspot-card';
+    var meta = [];
+    if (hs.text) meta.push(hs.text.length + ' chars');
+    if (hs.media) meta.push(hs.media.type === 'image' ? 'image' : 'audio');
+    if (hs.bhId) meta.push('B&H');
+    card.innerHTML = '<div class="hc-top">' +
+      '<div class="hc-num">' + (i+1) + '</div>' +
+      '<div class="hc-info"><div class="hc-title">' + escHTML(hs.title) + '</div>' +
+      '<div class="hc-meta">' + (meta.join(' · ') || 'No description') + '</div></div>' +
+      '<div class="hc-actions">' +
+      '<button class="hc-action-btn" onclick="event.stopPropagation();editHotspotFromList(' + hs.id + ')">&#9998;</button>' +
+      '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteHotspot(' + hs.id + ')">&#128465;</button>' +
+      '</div></div>';
+    list.appendChild(card);
+  });
+}
+function editHotspotFromList(id) { editingId = id; openModal(); }
+
+function updateCounter() {
+  var c = hotspots.length;
+  var badge = document.getElementById('count-badge');
+  badge.textContent = c;
+  badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
+  setTimeout(function() { badge.classList.remove('bump'); }, 300);
+  document.getElementById('stat-total').textContent = c;
+  document.getElementById('stat-media').textContent = hotspots.filter(function(h) { return h.media; }).length;
+  document.getElementById('stat-desc').textContent = hotspots.filter(function(h) { return h.text && h.text.trim(); }).length;
+  document.getElementById('export-btn').disabled = c === 0 || !backgroundDataURL;
+}
+
+function resetTool() {
+  if ((hotspots.length > 0 || backgroundDataURL) && !confirm('Reset everything?')) return;
+  hotspots = []; backgroundDataURL = null;
+  document.getElementById('canvas-img').src = '';
+  document.getElementById('image-canvas').style.display = 'none';
+  document.getElementById('upload-zone').style.display = 'flex';
+  document.getElementById('toolbar-hint').textContent = 'Upload an image to begin';
+  document.getElementById('main-img-input').value = '';
+  document.querySelectorAll('.hotspot').forEach(function(el) { el.remove(); });
+  renderList(); updateCounter();
+}
+
+function escHTML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function hexToRgba(hex, a) {
+  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+function setHotspotColor(color, el) {
+  hsColor = color;
+  document.querySelectorAll('.swatch').forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+  if (el.id === 'swatch-custom') el.style.background = color;
+  updatePreviewPin(); updateDynamicStyles();
+}
+function setAnimation(anim, el) {
+  hsAnimation = anim;
+  document.querySelectorAll('.anim-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  var row = document.getElementById('speed-row');
+  row.style.opacity = anim === 'none' ? '0.35' : '1';
+  row.style.pointerEvents = anim === 'none' ? 'none' : 'auto';
+  updatePreviewPin(); updateDynamicStyles();
+}
+function setPulseSpeed(val) { hsPulseSpeed = parseFloat(val); updatePreviewPin(); updateDynamicStyles(); }
+
+function updatePreviewPin() {
+  var pin = document.getElementById('preview-pin');
+  pin.style.background = hsColor;
+  pin.classList.remove('preview-bounce','preview-ripple','preview-none');
+  if (hsAnimation === 'bounce') pin.classList.add('preview-bounce');
+  else if (hsAnimation === 'ripple') pin.classList.add('preview-ripple');
+  else if (hsAnimation === 'none') pin.classList.add('preview-none');
+}
+
+function updateDynamicStyles() {
+  var s = document.getElementById('dyn-styles');
+  if (!s) { s = document.createElement('style'); s.id = 'dyn-styles'; document.head.appendChild(s); }
+  var ring = hexToRgba(hsColor, 0.45);
+  var sh1 = hexToRgba(hsColor, 0.5);
+  var sh2 = hexToRgba(hsColor, 0.75);
+  var dur = (1 / hsPulseSpeed * 2).toFixed(2);
+  var anim = '';
+  if (hsAnimation === 'none') anim = '.hotspot-pin::after{display:none!important}';
+  else if (hsAnimation === 'bounce') anim = '.hotspot-pin::after{display:none!important}.hotspot-pin{animation:dyn-bounce ' + (1/hsPulseSpeed).toFixed(2) + 's ease-in-out infinite alternate}@keyframes dyn-bounce{from{transform:translateY(0)}to{transform:translateY(-6px)}}';
+  else if (hsAnimation === 'ripple') anim = '.hotspot-pin::after{border-color:' + ring + '!important;animation:dyn-ripple ' + dur + 's linear infinite!important}@keyframes dyn-ripple{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.4);opacity:0}}';
+  else anim = '.hotspot-pin::after{border-color:' + ring + '!important;animation:dyn-pulse ' + dur + 's ease-out infinite!important}@keyframes dyn-pulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}';
+  s.textContent = '.hotspot-pin{background:' + hsColor + '!important;box-shadow:0 4px 16px ' + sh1 + '!important}.hotspot:hover .hotspot-pin{box-shadow:0 6px 24px ' + sh2 + '!important}.hc-num{background:' + hsColor + '!important}.count-badge{color:' + hsColor + '!important}' + anim;
+}
+
+function buildExportPinCSS(p) {
+  var ring = hexToRgba(hsColor, 0.45);
+  var sh1 = hexToRgba(hsColor, 0.5);
+  var sh2 = hexToRgba(hsColor, 0.8);
+  var dur = (1 / hsPulseSpeed * 2).toFixed(2);
+  var nm = (p + 'anim').replace(/[^a-z0-9]/gi,'_');
+  var after = '';
+  if (hsAnimation === 'none') after = '.' + p + 'hotspot-pin::after{display:none}';
+  else if (hsAnimation === 'bounce') after = '.' + p + 'hotspot-pin::after{display:none}.' + p + 'hotspot-pin{animation:' + nm + ' ' + (1/hsPulseSpeed).toFixed(2) + 's ease-in-out infinite alternate}@keyframes ' + nm + '{from{transform:translateY(0)}to{transform:translateY(-6px)}}';
+  else if (hsAnimation === 'ripple') after = '.' + p + 'hotspot-pin::after{content:\'\';position:absolute;inset:-6px;border-radius:50%;border:2px solid ' + ring + ';animation:' + nm + ' ' + dur + 's linear infinite}@keyframes ' + nm + '{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.4);opacity:0}}';
+  else after = '.' + p + 'hotspot-pin::after{content:\'\';position:absolute;inset:-6px;border-radius:50%;border:2px solid ' + ring + ';animation:' + nm + ' ' + dur + 's ease-out infinite}@keyframes ' + nm + '{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}';
+  return '.' + p + 'hotspot-pin{width:34px;height:34px;background:' + hsColor + ';border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px ' + sh1 + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;transition:all .2s;position:relative}\n.' + p + 'hotspot:hover .' + p + 'hotspot-pin,.' + p + 'hotspot.open .' + p + 'hotspot-pin{transform:scale(1.2);box-shadow:0 6px 24px ' + sh2 + '}\n' + after;
+}
+
+function hsDataForExport() {
+  return JSON.stringify(hotspots.map(function(h) {
+    return { id: h.id, x: h.x, y: h.y, title: h.title, text: h.text, bhId: h.bhId || null,
+      media: h.media ? { type: h.media.type, dataURL: h.media.dataURL, name: h.media.name } : null };
+  }));
+}
+
+function generateExportHTML() {
+  var color = hsColor;
+  var dur = (1 / hsPulseSpeed * 2).toFixed(2);
+  var ring = hexToRgba(color, 0.45);
+  var sh1  = hexToRgba(color, 0.5);
+  var sh2  = hexToRgba(color, 0.8);
+  var data = hsDataForExport();
+
+  var animCSS;
+  if (hsAnimation === 'none') {
+    animCSS = '.hotspot-pin::after{display:none}';
+  } else if (hsAnimation === 'bounce') {
+    animCSS = '.hotspot-pin{animation:ep-b ' + (1/hsPulseSpeed).toFixed(2) + 's ease-in-out infinite alternate}'
+            + '.hotspot-pin::after{display:none}'
+            + '@keyframes ep-b{from{transform:translateY(0)}to{transform:translateY(-6px)}}';
+  } else if (hsAnimation === 'ripple') {
+    animCSS = '.hotspot-pin::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid ' + ring + ';animation:ep-a ' + dur + 's linear infinite}'
+            + '@keyframes ep-a{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.4);opacity:0}}';
+  } else {
+    animCSS = '.hotspot-pin::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid ' + ring + ';animation:ep-a ' + dur + 's ease-out infinite}'
+            + '@keyframes ep-a{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}';
+  }
+
+  var css = ''
+    + '*{box-sizing:border-box;margin:0;padding:0}\n'
+    + 'body{background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui,sans-serif}\n'
+    + '.container{position:relative;display:inline-block;line-height:0}\n'
+    + '.container img{display:block;max-width:90vw;max-height:90vh;border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,.6)}\n'
+    + '.hotspot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10}\n'
+    + '.hotspot-pin{width:34px;height:34px;background:' + color + ';border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px ' + sh1 + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;transition:transform .2s;position:relative;font-family:system-ui,sans-serif}\n'
+    + '.hotspot:hover .hotspot-pin{transform:scale(1.2);box-shadow:0 6px 24px ' + sh2 + '}\n'
+    + animCSS + '\n'
+    + '.tooltip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%) translateY(8px);background:#fff;border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.2);padding:14px 16px;min-width:200px;max-width:270px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:20;font-family:system-ui,sans-serif;line-height:1.4}\n'
+    + '.tooltip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#fff}\n'
+    + '.hotspot:hover .tooltip,.hotspot.open .tooltip{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}\n'
+    + '.tt-title{font-weight:700;font-size:14px;color:#111;margin-bottom:6px}\n'
+    + '.tt-text{font-size:13px;color:#555;line-height:1.5;margin-bottom:8px}\n'
+    + '.tt-img{width:100%;border-radius:8px;display:block;margin-bottom:8px}\n'
+    + '.tt-audio{display:flex;align-items:center;gap:8px;background:#f5f4f0;border-radius:8px;padding:8px 10px}\n'
+    + '.tt-aplay{width:28px;height:28px;background:' + color + ';border-radius:50%;border:none;color:#fff;cursor:pointer;font-size:10px;flex-shrink:0}\n'
+    + '.tt-aname{font-size:12px;color:#555}\n'
+    + '.tt-bh{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:system-ui,sans-serif}\n'
+    + '.tt-bh:hover{opacity:.85}';
+
+  // Build JS using createElement to avoid any HTML escaping issues
+  var js = ''
+    + '(function(){\n'
+    + 'var d=' + data + ',openId=null;\n'
+    + 'function esc(s){var d=document.createElement("div");d.appendChild(document.createTextNode(s));return d.innerHTML;}\n'
+    + 'function bhUrl(id){return "https://www.bhphotovideo.com/c/product/"+id+"/na.html";}\n'
+    + 'd.forEach(function(h,i){\n'
+    + '  var wrap=document.createElement("div");\n'
+    + '  wrap.className="hotspot";wrap.style.left=h.x+"%";wrap.style.top=h.y+"%";\n'
+    + '  var pin=document.createElement("div");\n'
+    + '  pin.className="hotspot-pin";pin.textContent=i+1;\n'
+    + '  var tip=document.createElement("div");\n'
+    + '  tip.className="tooltip";\n'
+    + '  var ttl=document.createElement("div");ttl.className="tt-title";ttl.textContent=h.title;tip.appendChild(ttl);\n'
+    + '  if(h.text){var txt=document.createElement("div");txt.className="tt-text";txt.textContent=h.text;tip.appendChild(txt);}\n'
+    + '  if(h.media){\n'
+    + '    if(h.media.type==="image"){var im=document.createElement("img");im.className="tt-img";im.src=h.media.dataURL;tip.appendChild(im);}\n'
+    + '    else{var aw=document.createElement("div");aw.className="tt-audio";\n'
+    + '      var ab=document.createElement("button");ab.className="tt-aplay";ab.innerHTML="&#9654;";\n'
+    + '      var au=document.createElement("audio");au.id="A"+h.id;au.src=h.media.dataURL;\n'
+    + '      ab.onclick=function(){if(au.paused){au.play();ab.innerHTML="&#9646;&#9646;";}else{au.pause();ab.innerHTML="&#9654;";}}\n'
+    + '      var an=document.createElement("span");an.className="tt-aname";an.textContent=h.media.name;\n'
+    + '      aw.appendChild(ab);aw.appendChild(an);aw.appendChild(au);tip.appendChild(aw);\n'
+    + '    }\n'
+    + '  }\n'
+    + '  if(h.bhId){var bl=document.createElement("a");bl.className="tt-bh";bl.href=bhUrl(h.bhId);bl.target="_blank";bl.rel="noopener";bl.textContent="See Details ↗";tip.appendChild(bl);}\n'
+    + '  wrap.appendChild(pin);wrap.appendChild(tip);\n'
+    + '  wrap.addEventListener("click",function(e){\n'
+    + '    e.stopPropagation();\n'
+    + '    if(openId===h.id){wrap.classList.remove("open");openId=null;}\n'
+    + '    else{document.querySelectorAll(".hotspot").forEach(function(x){x.classList.remove("open");});wrap.classList.add("open");openId=h.id;}\n'
+    + '  });\n'
+    + '  document.getElementById("c").appendChild(wrap);\n'
+    + '});\n'
+    + 'document.addEventListener("click",function(){document.querySelectorAll(".hotspot").forEach(function(x){x.classList.remove("open");});openId=null;});\n'
+    + '})();';
+
+  return '<!DOCTYPE html>\n'
+    + '<html lang="en">\n<head>\n'
+    + '<meta charset="UTF-8">\n'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1.0">\n'
+    + '<title>Interactive Hotspot Image</title>\n'
+    + '<style>\n' + css + '\n</style>\n'
+    + '</head>\n<body>\n'
+    + '<div class="container" id="c"><img src="' + backgroundDataURL + '" alt="Hotspot Image"></div>\n'
+    + '<script>\n' + js + '\n<\/script>\n'
+    + '</body>\n</html>';
+}
+
+function generateEmbedCode() {
+  var uid = 'hs' + Math.random().toString(36).slice(2,7);
+  var color = hsColor;
+  var dur = (1 / hsPulseSpeed * 2).toFixed(2);
+  var ring = hexToRgba(color, 0.45);
+  var sh1  = hexToRgba(color, 0.5);
+  var sh2  = hexToRgba(color, 0.8);
+  var data = hsDataForExport();
+  var p = uid + '-';
+
+  var animCSS;
+  if (hsAnimation === 'none') {
+    animCSS = '.' + p + 'hotspot-pin::after{display:none}';
+  } else if (hsAnimation === 'bounce') {
+    animCSS = '.' + p + 'hotspot-pin{animation:' + uid + 'b ' + (1/hsPulseSpeed).toFixed(2) + 's ease-in-out infinite alternate}'
+            + '.' + p + 'hotspot-pin::after{display:none}'
+            + '@keyframes ' + uid + 'b{from{transform:translateY(0)}to{transform:translateY(-6px)}}';
+  } else if (hsAnimation === 'ripple') {
+    animCSS = '.' + p + 'hotspot-pin::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid ' + ring + ';animation:' + uid + 'a ' + dur + 's linear infinite}'
+            + '@keyframes ' + uid + 'a{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.4);opacity:0}}';
+  } else {
+    animCSS = '.' + p + 'hotspot-pin::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid ' + ring + ';animation:' + uid + 'a ' + dur + 's ease-out infinite}'
+            + '@keyframes ' + uid + 'a{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}';
+  }
+
+  var css = ''
+    + '.' + p + 'w{position:relative;display:inline-block;line-height:0;max-width:100%}\n'
+    + '.' + p + 'w img{display:block;width:100%;height:auto;border-radius:10px}\n'
+    + '.' + p + 'h{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10}\n'
+    + '.' + p + 'hotspot-pin{width:34px;height:34px;background:' + color + ';border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px ' + sh1 + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;transition:transform .2s;position:relative;font-family:system-ui,sans-serif}\n'
+    + '.' + p + 'h:hover .' + p + 'hotspot-pin{transform:scale(1.2);box-shadow:0 6px 24px ' + sh2 + '}\n'
+    + animCSS + '\n'
+    + '.' + p + 't{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%) translateY(8px);background:#fff;border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.2);padding:14px 16px;min-width:200px;max-width:270px;opacity:0;pointer-events:none;transition:all .25s;z-index:20;font-family:system-ui,sans-serif;line-height:1.4}\n'
+    + '.' + p + 't::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:#fff}\n'
+    + '.' + p + 'h:hover .' + p + 't,.' + p + 'h.open .' + p + 't{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}\n'
+    + '.' + p + 'title{font-weight:700;font-size:14px;color:#111;margin-bottom:6px}\n'
+    + '.' + p + 'text{font-size:13px;color:#555;line-height:1.5;margin-bottom:8px}\n'
+    + '.' + p + 'img{width:100%;border-radius:8px;display:block;margin-bottom:8px}\n'
+    + '.' + p + 'aud{display:flex;align-items:center;gap:8px;background:#f5f4f0;border-radius:8px;padding:8px 10px}\n'
+    + '.' + p + 'apl{width:28px;height:28px;background:' + color + ';border-radius:50%;border:none;color:#fff;cursor:pointer;font-size:10px;flex-shrink:0}\n'
+    + '.' + p + 'anm{font-size:12px;color:#555}\n'
+    + '.' + p + 'bh{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:system-ui,sans-serif}\n'
+    + '.' + p + 'bh:hover{opacity:.85}';
+
+  var js = ''
+    + '(function(){\n'
+    + 'var d=' + data + ',w=document.getElementById("' + uid + '"),openId=null;\n'
+    + 'function bhUrl(id){return "https://www.bhphotovideo.com/c/product/"+id+"/na.html";}\n'
+    + 'd.forEach(function(h,i){\n'
+    + '  var el=document.createElement("div");\n'
+    + '  el.className="' + p + 'h";el.style.left=h.x+"%";el.style.top=h.y+"%";\n'
+    + '  var pin=document.createElement("div");\n'
+    + '  pin.className="' + p + 'hotspot-pin";pin.textContent=i+1;\n'
+    + '  var tip=document.createElement("div");tip.className="' + p + 't";\n'
+    + '  var ttl=document.createElement("div");ttl.className="' + p + 'title";ttl.textContent=h.title;tip.appendChild(ttl);\n'
+    + '  if(h.text){var tx=document.createElement("div");tx.className="' + p + 'text";tx.textContent=h.text;tip.appendChild(tx);}\n'
+    + '  if(h.media){\n'
+    + '    if(h.media.type==="image"){var im=document.createElement("img");im.className="' + p + 'img";im.src=h.media.dataURL;tip.appendChild(im);}\n'
+    + '    else{var aw=document.createElement("div");aw.className="' + p + 'aud";\n'
+    + '      var ab=document.createElement("button");ab.className="' + p + 'apl";ab.innerHTML="&#9654;";\n'
+    + '      var au=document.createElement("audio");au.src=h.media.dataURL;\n'
+    + '      ab.onclick=function(){if(au.paused){au.play();ab.innerHTML="&#9646;&#9646;";}else{au.pause();ab.innerHTML="&#9654;";}}\n'
+    + '      var an=document.createElement("span");an.className="' + p + 'anm";an.textContent=h.media.name;\n'
+    + '      aw.appendChild(ab);aw.appendChild(an);aw.appendChild(au);tip.appendChild(aw);\n'
+    + '    }\n'
+    + '  }\n'
+    + '  if(h.bhId){var bl=document.createElement("a");bl.className="' + p + 'bh";bl.href=bhUrl(h.bhId);bl.target="_blank";bl.rel="noopener";bl.textContent="See Details ↗";tip.appendChild(bl);}\n'
+    + '  el.appendChild(pin);el.appendChild(tip);\n'
+    + '  el.addEventListener("click",function(e){\n'
+    + '    e.stopPropagation();\n'
+    + '    if(openId===h.id){el.classList.remove("open");openId=null;}\n'
+    + '    else{w.querySelectorAll(".' + p + 'h").forEach(function(x){x.classList.remove("open");});el.classList.add("open");openId=h.id;}\n'
+    + '  });\n'
+    + '  w.appendChild(el);\n'
+    + '});\n'
+    + 'document.addEventListener("click",function(){w.querySelectorAll(".' + p + 'h").forEach(function(x){x.classList.remove("open");});openId=null;});\n'
+    + '})();';
+
+  return '<!-- Hotspot Embed: paste inside body -->\n'
+    + '<style>\n' + css + '\n</style>\n'
+    + '<div class="' + p + 'w" id="' + uid + '"><img src="' + backgroundDataURL + '" alt="Hotspot Image"></div>\n'
+    + '<script>\n' + js + '\n<\/script>';
+}
+
+
+function switchExportTab(tab) {
+  exportTab = tab;
+  ['html','embed','webp','claude'].forEach(function(t) {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('export-info-' + t).style.display = t === tab ? 'flex' : 'none';
+  });
+  var isWebp = tab === 'webp';
+  var isClaude = tab === 'claude';
+  document.getElementById('export-preview').style.display = (isWebp) ? 'none' : 'block';
+  document.getElementById('webp-preview-wrap').style.display = isWebp ? 'block' : 'none';
+  document.getElementById('copy-btn').style.display = isWebp ? 'none' : 'inline-flex';
+  document.getElementById('download-btn').style.display = isClaude ? 'none' : 'inline-flex';
+  if (tab === 'html') document.getElementById('download-btn').textContent = 'Download .html';
+  else if (tab === 'embed') document.getElementById('download-btn').textContent = 'Download snippet';
+  else if (tab === 'webp') document.getElementById('download-btn').textContent = 'Download .webp';
+  document.getElementById('copy-btn').textContent = isClaude ? 'Copy Prompt' : 'Copy to Clipboard';
+  if (isWebp) renderWebPPreview();
+  else refreshExportPreview();
+}
+
+function refreshExportPreview() {
+  var code;
+  if (exportTab === 'html') code = generateExportHTML();
+  else if (exportTab === 'embed') code = generateEmbedCode();
+  else if (exportTab === 'claude') code = generateClaudeCodeExport();
+  else code = '';
+  var preview = document.getElementById('export-preview');
+  preview.textContent = code.length > 4000 ? code.substring(0, 4000) + '\n\n... (truncated — full content on copy)' : code;
+}
+
+function openExport() {
+  exportTab = 'html';
+  ['html','embed','webp','claude'].forEach(function(t) {
+    document.getElementById('tab-' + t).classList.toggle('active', t === 'html');
+    document.getElementById('export-info-' + t).style.display = t === 'html' ? 'flex' : 'none';
+  });
+  document.getElementById('export-preview').style.display = 'block';
+  document.getElementById('webp-preview-wrap').style.display = 'none';
+  document.getElementById('copy-btn').style.display = 'inline-flex';
+  document.getElementById('copy-btn').textContent = 'Copy to Clipboard';
+  document.getElementById('download-btn').style.display = 'inline-flex';
+  document.getElementById('download-btn').textContent = 'Download .html';
+  refreshExportPreview();
+  document.getElementById('export-modal').style.display = 'flex';
+}
+
+function closeExport() { document.getElementById('export-modal').style.display = 'none'; }
+function closeExportOnOverlay(e) { if (e.target === document.getElementById('export-modal')) closeExport(); }
+
+function getActiveCode() {
+  if (exportTab === 'html') return generateExportHTML();
+  if (exportTab === 'embed') return generateEmbedCode();
+  if (exportTab === 'claude') return generateClaudeCodeExport();
+  return '';
+}
+
+function copyExport() {
+  var btn = document.getElementById('copy-btn');
+  var origText = btn.textContent;
+  navigator.clipboard.writeText(getActiveCode()).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = origText; }, 2000);
+  });
+}
+
+function downloadExport() {
+  if (exportTab === 'webp') { downloadWebP(); return; }
+  var code = getActiveCode();
+  var filename = exportTab === 'html' ? 'hotspot-image.html' : 'hotspot-embed.html';
+  var blob = new Blob([code], { type: 'text/html' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+}
+
+function generateClaudeCodeExport() {
+  var data = hsDataForExport();
+  var parsed = JSON.parse(data);
+
+  // Strip media dataURLs from the summary (too large), keep metadata
+  var hotspotSummary = parsed.map(function(h, i) {
+    return {
+      index: i + 1,
+      id: h.id,
+      position: { x: Math.round(h.x * 10) / 10 + '%', y: Math.round(h.y * 10) / 10 + '%' },
+      title: h.title,
+      text: h.text || '',
+      bhId: h.bhId || null,
+      hasImage: h.media && h.media.type === 'image',
+      hasAudio: h.media && h.media.type === 'audio',
+      mediaName: h.media ? h.media.name : null
+    };
+  });
+
+  var styleConfig = {
+    pinColor: hsColor,
+    animation: hsAnimation,
+    pulseSpeed: hsPulseSpeed,
+    animationDuration: (1 / hsPulseSpeed * 2).toFixed(2) + 's'
+  };
+
+  var hasMedia = parsed.some(function(h) { return h.media; });
+  var hasBH = parsed.some(function(h) { return h.bhId; });
+
+  var prompt = '# Hotspot Image Project — Claude Code Transfer\n\n'
+    + 'I built an interactive hotspot image in Hotspot Builder and want you to implement it as a production-ready project.\n\n'
+    + '## Project Data\n\n'
+    + '### Background Image\n'
+    + 'The background image is embedded as a base64 data URL. '
+    + (backgroundDataURL ? 'It is a ' + (backgroundDataURL.split(';')[0].split(':')[1] || 'image') + ' file.' : 'No image loaded.') + '\n\n'
+    + '```\nIMAGE_DATA_URL = "' + (backgroundDataURL ? backgroundDataURL.substring(0, 80) + '...[truncated, full data in hotspot-data.json]' : 'none') + '"\n```\n\n'
+    + '### Hotspot Configuration\n\n'
+    + '**Style settings:**\n'
+    + '```json\n' + JSON.stringify(styleConfig, null, 2) + '\n```\n\n'
+    + '**Hotspots (' + hotspots.length + ' total):**\n'
+    + '```json\n' + JSON.stringify(hotspotSummary, null, 2) + '\n```\n\n'
+    + '## What to Build\n\n'
+    + 'Create a self-contained interactive hotspot image component with these requirements:\n\n'
+    + '### Core Features\n'
+    + '- Display the background image full-width, responsive\n'
+    + '- Place numbered circular pins at the exact percentage positions above\n'
+    + '- Pin color: `' + hsColor + '`, animation: `' + hsAnimation + '`'
+    + (hsAnimation !== 'none' ? ', duration: ' + (1/hsPulseSpeed*2).toFixed(2) + 's' : '') + '\n'
+    + '- On **hover (desktop)** and **tap (mobile)**: show a tooltip card above the pin\n'
+    + '- Tooltip contains: title, description text, and any media\n'
+    + '- Clicking/tapping outside closes open tooltips\n\n'
+    + '### Tooltip Content Per Hotspot\n'
+    + hotspotSummary.map(function(h) {
+        var lines = ['**Hotspot ' + h.index + ': ' + h.title + '**'];
+        if (h.text) lines.push('- Description: "' + h.text + '"');
+        if (h.hasImage) lines.push('- Contains an image (' + h.mediaName + ')');
+        if (h.hasAudio) lines.push('- Contains audio (' + h.mediaName + ')');
+        if (h.bhId) lines.push('- B&H product link: https://www.bhphotovideo.com/c/product/' + h.bhId + '/na.html');
+        return lines.join('\n');
+      }).join('\n\n') + '\n\n'
+    + (hasBH ? '### B&H Product Links\nHotspots with a B&H Product ID should show a "See Details" button that opens:\n`https://www.bhphotovideo.com/c/product/{PRODUCT_ID}/na.html`\n\n' : '')
+    + '### Animation Spec\n'
+    + (hsAnimation === 'pulse'
+        ? 'Pulse ring: `::after` pseudo-element, scale from 0.8 to 1.6, opacity 1 to 0, duration ' + (1/hsPulseSpeed*2).toFixed(2) + 's, ease-out, infinite.\n\n'
+      : hsAnimation === 'ripple'
+        ? 'Ripple ring: `::after` pseudo-element, scale from 0.8 to 2.4, opacity 0.9 to 0, duration ' + (1/hsPulseSpeed*2).toFixed(2) + 's, linear, infinite.\n\n'
+      : hsAnimation === 'bounce'
+        ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
+      : 'No animation on pins.\n\n')
+    + '### Suggested File Structure\n'
+    + '```\nhotspot-project/\n'
+    + '  index.html          ← main entry point\n'
+    + '  hotspot-data.json   ← all hotspot data including full image base64\n'
+    + '  hotspot.css         ← styles and animations\n'
+    + '  hotspot.js          ← logic: render, tooltip toggle, mobile tap\n'
+    + '  README.md           ← usage instructions\n'
+    + '```\n\n'
+    + '### hotspot-data.json contents\n'
+    + 'This file should contain the complete data:\n'
+    + '```json\n'
+    + '{\n'
+    + '  "backgroundImage": "<FULL_BASE64_DATA_URL>",\n'
+    + '  "style": ' + JSON.stringify(styleConfig) + ',\n'
+    + '  "hotspots": ' + data + '\n'
+    + '}\n'
+    + '```\n\n'
+    + '### Implementation Notes\n'
+    + '- Use `position: absolute` with `left` and `top` percentages for pin placement\n'
+    + '- Container must be `position: relative` with `display: inline-block` or `position: relative; width: 100%`\n'
+    + '- Tooltip positioning: `bottom: calc(100% + 14px)`, centered with `translateX(-50%)`\n'
+    + '- On mobile (≤768px): use tap to toggle tooltip, not hover\n'
+    + '- Prevent tooltip from clipping at image edges (flip to bottom if near top)\n'
+    + (hasMedia ? '- Media (images/audio) are embedded as base64 in hotspot-data.json\n' : '')
+    + '\n### Preferred Framework\n'
+    + 'Implement as: **vanilla HTML/CSS/JS** (no build step required). '
+    + 'If I ask for a specific framework (React, Vue, etc.), adapt accordingly.\n\n'
+    + '---\n'
+    + '_Generated by Hotspot Builder. ' + hotspots.length + ' hotspot(s), style: ' + hsColor + ' / ' + hsAnimation + '_';
+
+  return prompt;
+}
+
+function hexToRgbaStr(hex, alpha) {
+  var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+function drawHotspotsOnCanvas(canvas, img) {
+  var ctx = canvas.getContext('2d');
+  canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+  ctx.drawImage(img, 0, 0);
+  var scaleX = img.naturalWidth / 100, scaleY = img.naturalHeight / 100;
+  var pinR = Math.max(16, Math.min(32, img.naturalWidth * 0.025));
+  var fontSize = Math.round(pinR * 0.72);
+  hotspots.forEach(function(hs, i) {
+    var cx = hs.x * scaleX, cy = hs.y * scaleY;
+    ctx.beginPath(); ctx.arc(cx, cy, pinR + 8, 0, Math.PI * 2);
+    ctx.strokeStyle = hexToRgbaStr(hsColor, 0.3); ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowColor = hexToRgbaStr(hsColor, 0.5); ctx.shadowBlur = pinR * 0.8;
+    ctx.beginPath(); ctx.arc(cx, cy, pinR, 0, Math.PI * 2);
+    ctx.fillStyle = hsColor; ctx.fill();
+    ctx.shadowBlur = 0; ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, pinR * 0.15); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = '700 ' + fontSize + 'px system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1), cx, cy);
+  });
+}
+function renderWebPPreview() {
+  if (!backgroundDataURL) return;
+  var img = new Image();
+  img.onload = function() { var c = document.createElement('canvas'); drawHotspotsOnCanvas(c, img); document.getElementById('webp-preview-img').src = c.toDataURL('image/webp', 0.92); };
+  img.src = backgroundDataURL;
+}
+function downloadWebP() {
+  if (!backgroundDataURL) return;
+  var btn = document.getElementById('download-btn');
+  btn.textContent = 'Rendering...'; btn.disabled = true;
+  var img = new Image();
+  img.onload = function() {
+    var c = document.createElement('canvas'); drawHotspotsOnCanvas(c, img);
+    var a = document.createElement('a');
+    a.href = c.toDataURL('image/webp', 0.92); a.download = 'hotspot-image.webp'; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    btn.textContent = 'Download .webp'; btn.disabled = false;
+  };
+  img.src = backgroundDataURL;
+}
+
+// ── MOBILE ────────────────────────────────────────────────────────────────────
+var isMobile = false;
+
+function checkViewport() {
+  isMobile = window.innerWidth <= 768;
+  document.body.classList.toggle('is-mobile', isMobile);
+  if (isMobile) {
+    // Switch tooltip trigger from hover to tap
+    document.getElementById('canvas-viewport').classList.remove('view-mode');
+    document.getElementById('toolbar-hint').style.display = 'none';
+  }
+}
+window.addEventListener('resize', checkViewport);
+checkViewport();
+
+// On mobile, tapping a hotspot toggles its tooltip instead of opening edit
+document.getElementById('image-canvas').addEventListener('click', function(e) {
+  if (!isMobile) return;
+  var pin = e.target.closest('.hotspot');
+  if (!pin) return;
+  e.stopPropagation();
+  var wasOpen = pin.classList.contains('tapped');
+  document.querySelectorAll('.hotspot.tapped').forEach(function(h) { h.classList.remove('tapped'); });
+  if (!wasOpen) pin.classList.add('tapped');
+});
+
+// Tap outside closes tapped tooltips on mobile
+document.addEventListener('click', function(e) {
+  if (!isMobile) return;
+  if (!e.target.closest('.hotspot')) {
+    document.querySelectorAll('.hotspot.tapped').forEach(function(h) { h.classList.remove('tapped'); });
+  }
+});
+
+// Long press on mobile canvas to add hotspot (instead of click in add mode)
+var longPressTimer = null;
+document.getElementById('image-canvas').addEventListener('touchstart', function(e) {
+  if (!isMobile || e.target.closest('.hotspot')) return;
+  var touch = e.touches[0];
+  longPressTimer = setTimeout(function() {
+    var img = document.getElementById('canvas-img');
+    var rect = img.getBoundingClientRect();
+    var xPct = ((touch.clientX - rect.left) / rect.width) * 100;
+    var yPct = ((touch.clientY - rect.top) / rect.height) * 100;
+    if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
+    pendingX = xPct; pendingY = yPct; editingId = null;
+    // Haptic feedback if available
+    if (navigator.vibrate) navigator.vibrate(40);
+    openModal();
+  }, 500);
+}, { passive: true });
+document.getElementById('image-canvas').addEventListener('touchend', function() {
+  clearTimeout(longPressTimer);
+}, { passive: true });
+document.getElementById('image-canvas').addEventListener('touchmove', function() {
+  clearTimeout(longPressTimer);
+}, { passive: true });
+
+// Mobile nav
+function mobileNavTo(tab) {
+  // Close all sheets first
+  ['hotspots','style'].forEach(function(s) {
+    document.getElementById('mobile-sheet-' + s).classList.remove('open');
+  });
+  // Update active tab
+  document.querySelectorAll('.mobile-nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('mnav-' + tab).classList.add('active');
+  if (tab === 'canvas') {
+    // do nothing, canvas is always visible
+  } else if (tab === 'export') {
+    openExport();
+    document.getElementById('mnav-canvas').classList.add('active');
+    document.getElementById('mnav-export').classList.remove('active');
+  } else {
+    openMobileSheet(tab);
+  }
+}
+
+function openMobileSheet(name) {
+  document.getElementById('mobile-sheet-' + name).classList.add('open');
+}
+function closeMobileSheet(name) {
+  document.getElementById('mobile-sheet-' + name).classList.remove('open');
+  document.getElementById('mnav-canvas').classList.add('active');
+  document.querySelectorAll('.mobile-nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('mnav-canvas').classList.add('active');
+}
+
+// Sync mobile style controls with desktop ones
+function syncMobileStyle() {
+  var mPin = document.getElementById('m-preview-pin');
+  if (mPin) {
+    mPin.style.background = hsColor;
+    mPin.classList.remove('preview-bounce','preview-ripple','preview-none');
+    if (hsAnimation === 'bounce') mPin.classList.add('preview-bounce');
+    else if (hsAnimation === 'ripple') mPin.classList.add('preview-ripple');
+    else if (hsAnimation === 'none') mPin.classList.add('preview-none');
+  }
+  var mSpeed = document.getElementById('m-speed-row');
+  if (mSpeed) {
+    mSpeed.style.opacity = hsAnimation === 'none' ? '0.35' : '1';
+    mSpeed.style.pointerEvents = hsAnimation === 'none' ? 'none' : 'auto';
+  }
+}
+
+// Override updatePreviewPin to also sync mobile
+var _origUpdatePreviewPin = updatePreviewPin;
+updatePreviewPin = function() {
+  _origUpdatePreviewPin();
+  syncMobileStyle();
+};
+
+// Mobile hotspot list — mirrors desktop list
+function renderMobileList() {
+  if (!isMobile) return;
+  var list = document.getElementById('mobile-hotspot-list');
+  if (!list) return;
+  if (hotspots.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0;"><div class="empty-icon">&#9711;</div><div class="empty-title">No hotspots yet</div><div class="empty-text">Long-press anywhere on your image to add a hotspot.</div></div>';
+    return;
+  }
+  list.innerHTML = '';
+  hotspots.forEach(function(hs, i) {
+    var card = document.createElement('div');
+    card.className = 'hotspot-card';
+    card.style.cssText = 'padding:12px 14px;margin-bottom:10px;';
+    var meta = [];
+    if (hs.text) meta.push(hs.text.length + ' chars');
+    if (hs.media) meta.push(hs.media.type === 'image' ? 'image' : 'audio');
+    if (hs.bhId) meta.push('B&H');
+    card.innerHTML = '<div class="hc-top">'
+      + '<div class="hc-num" style="width:30px;height:30px;font-size:12px;">' + (i+1) + '</div>'
+      + '<div class="hc-info"><div class="hc-title">' + escHTML(hs.title) + '</div>'
+      + '<div class="hc-meta">' + (meta.join(' · ') || 'No description') + '</div></div>'
+      + '<div class="hc-actions">'
+      + '<button class="hc-action-btn" style="width:32px;height:32px;font-size:14px;" onclick="event.stopPropagation();editHotspotFromList(' + hs.id + ')">&#9998;</button>'
+      + '<button class="hc-action-btn delete" style="width:32px;height:32px;font-size:14px;" onclick="event.stopPropagation();deleteHotspot(' + hs.id + ')">&#128465;</button>'
+      + '</div></div>';
+    list.appendChild(card);
+  });
+  // Update mobile stats
+  document.getElementById('m-stat-total').textContent = hotspots.length;
+  document.getElementById('m-stat-media').textContent = hotspots.filter(function(h){return h.media;}).length;
+  document.getElementById('m-stat-desc').textContent = hotspots.filter(function(h){return h.text&&h.text.trim();}).length;
+  // Update nav badge
+  document.getElementById('mnav-hotspots-label').textContent = hotspots.length > 0 ? 'Hotspots (' + hotspots.length + ')' : 'Hotspots';
+}
+
+// Patch renderList to also call renderMobileList
+var _origRenderList = renderList;
+renderList = function() {
+  _origRenderList();
+  renderMobileList();
+};
+
+// Patch updateCounter to enable mobile export tab
+var _origUpdateCounter = updateCounter;
+updateCounter = function() {
+  _origUpdateCounter();
+  var mExport = document.getElementById('mnav-export');
+  if (mExport) mExport.disabled = hotspots.length === 0 || !backgroundDataURL;
+  renderMobileList();
+};
+
+// Mobile canvas: tap anywhere NOT on a hotspot to add (single tap, no long-press needed on small screens)
+// Provide a floating FAB button for adding hotspot on mobile
+document.getElementById('canvas-viewport').addEventListener('click', function(e) {
+  if (!isMobile) return;
+  if (e.target.closest('.hotspot')) return;
+  if (!backgroundDataURL) {
+    document.getElementById('main-img-input').click();
+    return;
+  }
+  // Single tap to add on mobile
+  var img = document.getElementById('canvas-img');
+  var rect = img.getBoundingClientRect();
+  var xPct = ((e.clientX - rect.left) / rect.width) * 100;
+  var yPct = ((e.clientY - rect.top) / rect.height) * 100;
+  if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
+  pendingX = xPct; pendingY = yPct; editingId = null;
+  openModal();
+});
+
+</script>
+</body>
+</html>
