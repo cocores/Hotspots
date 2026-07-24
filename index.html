@@ -77,7 +77,7 @@ header{background:var(--panel);padding:0 2rem;height:60px;display:flex;align-ite
 .panel-body{flex:1;overflow-y:auto;padding:1rem}
 .panel-body::-webkit-scrollbar{width:4px}
 .panel-body::-webkit-scrollbar-thumb{background:var(--panel3);border-radius:2px}
-.count-badge{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--accent);line-height:1;transition:all .2s ease}
+.count-badge{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;line-height:1;transition:all .2s ease}
 .count-badge.bump{transform:scale(1.3);color:#fff}
 .stats-row{display:flex;align-items:center;background:var(--panel2);border-radius:10px;padding:10px 0;margin-top:10px}
 .stat-box{flex:1;text-align:center}
@@ -969,7 +969,7 @@ function updateDynamicStyles() {
   else if (hsAnimation === 'bounce') anim = '.hotspot-pin::after{display:none!important}.hotspot-pin{animation:dyn-bounce ' + (1/hsPulseSpeed).toFixed(2) + 's ease-in-out infinite alternate}@keyframes dyn-bounce{from{transform:translateY(0)}to{transform:translateY(-6px)}}';
   else if (hsAnimation === 'ripple') anim = '.hotspot-pin::after{border-color:' + ring + '!important;animation:dyn-ripple ' + dur + 's linear infinite!important}@keyframes dyn-ripple{0%{transform:scale(.8);opacity:.9}100%{transform:scale(2.4);opacity:0}}';
   else anim = '.hotspot-pin::after{border-color:' + ring + '!important;animation:dyn-pulse ' + dur + 's ease-out infinite!important}@keyframes dyn-pulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}';
-  s.textContent = '.hotspot-pin{background:' + hsColor + '!important;box-shadow:0 4px 16px ' + sh1 + '!important}.hotspot:hover .hotspot-pin{box-shadow:0 6px 24px ' + sh2 + '!important}.hc-num{background:' + hsColor + '!important}.count-badge{color:' + hsColor + '!important}' + anim;
+  s.textContent = '.hotspot-pin{background:' + hsColor + '!important;box-shadow:0 4px 16px ' + sh1 + '!important}.hotspot:hover .hotspot-pin{box-shadow:0 6px 24px ' + sh2 + '!important}.hc-num{background:' + hsColor + '!important}' + anim;
 }
 
 function buildExportPinCSS(p) {
