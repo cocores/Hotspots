@@ -174,7 +174,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 .char-count.warn{color:var(--accent)}
 .section-divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
 .media-upload-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.media-type-btn{border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px 8px;text-align:center;cursor:pointer;background:var(--bg);transition:all .18s var(--ease)}
+.media-type-btn{display:block;margin:0;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px 8px;text-align:center;cursor:pointer;background:var(--bg);transition:all .18s var(--ease)}
 .media-type-btn:hover{border-color:var(--accent2);background:rgba(26,26,255,.03);transform:translateY(-1px)}
 .media-type-btn.has-file{border-style:solid;border-color:var(--accent2);background:rgba(26,26,255,.05)}
 .media-type-icon{font-size:22px;margin-bottom:5px}
@@ -184,7 +184,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 .media-preview .audio-info{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:9px;padding:10px 14px}
 .media-preview .audio-icon{font-size:20px}
 .media-preview .audio-name{font-size:13px;color:var(--ink2)}
-.hidden-input{display:none}
+.hidden-input{position:fixed;top:0;left:0;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0,0,0,0);opacity:0}
 .bh-field-row{display:flex;gap:8px;align-items:center}
 .bh-link-preview-box{display:none;margin-top:8px;font-size:12px;color:var(--ink3);background:var(--bg);border-radius:7px;padding:6px 10px;word-break:break-all}
 .export-code{background:#0b0b11;border-radius:var(--radius);padding:1rem;font-family:'SF Mono','Courier New',monospace;font-size:12px;color:#a8b2d8;overflow-x:auto;max-height:300px;overflow-y:auto;line-height:1.6;white-space:pre;border:1px solid rgba(255,255,255,.06)}
@@ -325,16 +325,16 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
     </div>
     <div class="mobile-toolbar-hint" id="mobile-hint">Tap image to place a hotspot &bull; Tap a pin to view info</div>
     <div class="canvas-viewport" id="canvas-viewport" onclick="handleCanvasClick(event)">
-      <div class="upload-zone" id="upload-zone"
+      <label class="upload-zone" id="upload-zone" for="main-img-input"
         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
-        onclick="document.getElementById('main-img-input').click();event.stopPropagation();">
+        onclick="event.stopPropagation();">
         <div class="upload-icon">&#128444;</div>
         <div class="upload-title">Drop your image here</div>
-        <div class="upload-sub">Or click to browse. JPEG, PNG, WebP, GIF.</div>
+        <div class="upload-sub">Tap to browse, or drop an image. JPEG, PNG, WebP, GIF.</div>
         <div class="upload-types">
           <span class="type-tag">JPEG</span><span class="type-tag">PNG</span><span class="type-tag">WebP</span><span class="type-tag">GIF</span>
         </div>
-      </div>
+      </label>
       <div class="image-canvas" id="image-canvas" style="display:none;">
         <img class="canvas-img" id="canvas-img" src="" alt="Background">
       </div>
@@ -528,14 +528,14 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <div class="form-group">
         <label>Media <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
         <div class="media-upload-grid">
-          <div class="media-type-btn" id="img-btn" onclick="document.getElementById('media-img-input').click()">
+          <label class="media-type-btn" id="img-btn" for="media-img-input">
             <div class="media-type-icon">&#128444;</div>
             <div class="media-type-label">Image / GIF</div>
-          </div>
-          <div class="media-type-btn" id="audio-btn" onclick="document.getElementById('media-audio-input').click()">
+          </label>
+          <label class="media-type-btn" id="audio-btn" for="media-audio-input">
             <div class="media-type-icon">&#127925;</div>
             <div class="media-type-label">Audio</div>
-          </div>
+          </label>
           <div class="media-type-btn" id="clear-media-btn" onclick="clearMedia()" style="opacity:0.4;pointer-events:none;">
             <div class="media-type-icon">&#10005;</div>
             <div class="media-type-label">Remove</div>
