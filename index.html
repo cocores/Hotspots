@@ -227,8 +227,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 /* ── MOBILE TOOLTIP (tap-activated) ────────────────────────────────────────── */
 .hotspot.tapped .hs-tooltip{opacity:1;transform:translateX(calc(-50% + var(--tt-dx,0px))) translateY(0);pointer-events:auto;}
 
-/* ── MOBILE UPLOAD ZONE ─────────────────────────────────────────────────────── */
-@media(max-width:768px){
+/* ── PHONE (compact layout: bottom nav + sheets) ───────────────────────────── */
+@media(max-width:600px){
   /* Layout shift */
   .app-body{grid-template-columns:1fr;height:calc(100vh - 56px - 62px);}
   .side-panel{display:none;}
@@ -274,6 +274,31 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
   .upload-zone{height:220px;}
   .upload-title{font-size:16px;}
   .mode-btn{padding:4px 8px;font-size:10px;}
+}
+
+/* ── TABLET (iPad: keep the sidebar layout, just touch-sized) ──────────────── */
+@media(min-width:601px) and (max-width:1024px){
+  .app-body{grid-template-columns:1fr 340px;}
+  .side-panel{padding-bottom:env(safe-area-inset-bottom,0);}
+  .canvas-toolbar{padding:12px 1.5rem;}
+  .hs-tooltip{max-width:280px;}
+}
+
+/* ── TOUCH DEVICES (any width — phone, tablet, touch laptop) ───────────────── */
+@media (hover:none) and (pointer:coarse){
+  .btn{padding:10px 18px}
+  .btn-sm{padding:8px 14px;font-size:12.5px}
+  .mode-btn{padding:9px 16px}
+  .anim-btn{padding:8px 14px}
+  .swatch{width:30px;height:30px}
+  .hc-action-btn{width:32px;height:32px;font-size:13px}
+  .hc-num{width:30px;height:30px;font-size:12px}
+  .modal-close{width:36px;height:36px}
+  .mobile-sheet-close{width:34px;height:34px}
+  .hotspot-pin{width:36px;height:36px}
+  input[type=range]{height:5px}
+  input[type=range]::-webkit-slider-thumb{width:18px;height:18px}
+  .export-tab{padding:14px}
 }
 </style>
 </head>
@@ -596,8 +621,9 @@ function setMode(m) {
   document.getElementById('mode-add').classList.toggle('active', m === 'add');
   document.getElementById('mode-view').classList.toggle('active', m === 'view');
   document.getElementById('canvas-viewport').classList.toggle('view-mode', m === 'view');
-  document.getElementById('toolbar-hint').textContent =
-    m === 'add' ? 'Click on image to place a hotspot' : 'Hover over pins to see tooltips';
+  document.getElementById('toolbar-hint').textContent = m === 'add'
+    ? (isTouch ? 'Tap the image to place a hotspot' : 'Click on image to place a hotspot')
+    : (isTouch ? 'Tap pins to see tooltips' : 'Hover over pins to see tooltips');
 }
 
 function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
@@ -616,7 +642,7 @@ function loadMainImage(file) {
     document.getElementById('canvas-img').src = ev.target.result;
     document.getElementById('upload-zone').style.display = 'none';
     document.getElementById('image-canvas').style.display = 'inline-block';
-    document.getElementById('toolbar-hint').textContent = 'Click on image to place a hotspot';
+    document.getElementById('toolbar-hint').textContent = isTouch ? 'Tap the image to place a hotspot' : 'Click on image to place a hotspot';
     document.getElementById('export-btn').disabled = false;
   };
   reader.readAsDataURL(file);
@@ -1439,9 +1465,10 @@ function downloadWebP() {
 
 // ── MOBILE ────────────────────────────────────────────────────────────────────
 var isMobile = false;
+var isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 function checkViewport() {
-  isMobile = window.innerWidth <= 768;
+  isMobile = window.innerWidth <= 600;
   document.body.classList.toggle('is-mobile', isMobile);
   if (isMobile) {
     // Switch tooltip trigger from hover to tap
@@ -1456,9 +1483,9 @@ function checkViewport() {
 window.addEventListener('resize', checkViewport);
 checkViewport();
 
-// On mobile, tapping a hotspot toggles its tooltip instead of opening edit
+// On touch devices (phone or tablet), tapping a hotspot toggles its tooltip instead of opening edit
 document.getElementById('image-canvas').addEventListener('click', function(e) {
-  if (!isMobile) return;
+  if (!isTouch) return;
   var pin = e.target.closest('.hotspot');
   if (!pin) return;
   e.stopPropagation();
@@ -1467,9 +1494,9 @@ document.getElementById('image-canvas').addEventListener('click', function(e) {
   if (!wasOpen) { clampTooltip(pin); pin.classList.add('tapped'); }
 });
 
-// Tap outside closes tapped tooltips on mobile
+// Tap outside closes tapped tooltips on touch devices
 document.addEventListener('click', function(e) {
-  if (!isMobile) return;
+  if (!isTouch) return;
   if (!e.target.closest('.hotspot')) {
     document.querySelectorAll('.hotspot.tapped').forEach(function(h) { h.classList.remove('tapped'); });
   }
