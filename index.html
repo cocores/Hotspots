@@ -50,6 +50,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .mode-btn.active{background:linear-gradient(135deg,var(--accent-light),var(--accent));color:#fff;box-shadow:0 2px 10px rgba(255,77,46,.4)}
 .canvas-viewport{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:2rem;cursor:crosshair}
 .canvas-viewport.view-mode{cursor:default}
+.canvas-viewport.drawing-active{touch-action:none}
 .canvas-viewport::-webkit-scrollbar{width:8px;height:8px}
 .canvas-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
 .image-canvas{position:relative;display:inline-block;line-height:0;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
@@ -126,6 +127,24 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .hc-detail-icon{width:34px;height:34px;border-radius:7px;background:var(--panel3);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 .hc-link{color:#7db3ff;text-decoration:none;font-size:12px;word-break:break-all}
 .hc-link:hover{text-decoration:underline}
+.ann-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--panel-muted);margin:14px 0 6px;padding-left:2px}
+.ann-section-label:first-child{margin-top:0}
+.ann-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}
+.ann-label{position:absolute;transform:translate(-50%,-50%);background:#fff;color:var(--ink);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:'DM Sans',sans-serif}
+.callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:var(--ink);font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:'DM Sans',sans-serif}
+.highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}
+.highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}
+.tool-btn-icon{margin-right:5px}
+.preview-toggle{font-size:12px;font-weight:500;padding:6px 14px;border-radius:16px;border:1px solid var(--panel-line);background:var(--panel2);color:var(--panel-muted);cursor:pointer;transition:all .2s var(--ease);display:inline-flex;align-items:center;gap:6px;margin-left:6px}
+.preview-toggle:hover{color:var(--panel-text)}
+.preview-toggle.active{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(26,26,255,.4)}
+.style-panel-section{display:none}
+.style-panel-section.active{display:block}
+.shape-toggle{display:flex;gap:3px;background:var(--panel2);padding:3px;border-radius:16px;border:1px solid var(--panel-line);margin-bottom:14px}
+.shape-toggle button{flex:1;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 11px;border-radius:13px;border:none;background:transparent;color:var(--panel-muted);cursor:pointer;transition:all .18s var(--ease)}
+.shape-toggle button:hover{color:var(--panel-text)}
+.shape-toggle button.active{background:var(--panel3);color:var(--panel-text);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.opacity-row{display:flex;align-items:center;gap:8px}
 .panel-footer{padding:1rem 1.25rem;border-top:1px solid var(--panel-line);flex-shrink:0}
 .style-section-title{display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--panel-muted);margin-bottom:12px}
 .live-preview-pin{width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;transition:background .2s var(--ease)}
@@ -250,8 +269,12 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
   /* Hotspot tooltip — wider on mobile */
   .hs-tooltip{min-width:180px;max-width:min(260px,80vw);}
 
-  /* Mode pill */
-  .mode-btn{padding:5px 10px;font-size:11px;}
+  /* Tool pill: icon-only to save space */
+  .mode-btn{padding:7px 9px;font-size:11px;}
+  .tool-btn-label{display:none;}
+  .tool-btn-icon{margin-right:0;}
+  .preview-toggle{padding:7px 10px;}
+  .preview-toggle-label{display:none;}
 
   /* Mobile nav + sheet visible */
   .mobile-bottom-nav{display:block;}
@@ -315,15 +338,18 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 <div class="app-body">
   <div class="canvas-area">
     <div class="canvas-toolbar">
-      <span class="toolbar-label">Mode</span>
-      <div class="mode-pill">
-        <button class="mode-btn active" id="mode-add" onclick="setMode('add')">+ Add Hotspot</button>
-        <button class="mode-btn" id="mode-view" onclick="setMode('view')">Preview</button>
+      <span class="toolbar-label">Tool</span>
+      <div class="mode-pill" id="tool-pill">
+        <button class="mode-btn active" id="tool-hotspot" onclick="setTool('hotspot')" title="Hotspots"><span class="tool-btn-icon">&#128205;</span><span class="tool-btn-label">Hotspot</span></button>
+        <button class="mode-btn" id="tool-measure" onclick="setTool('measure')" title="Measurements"><span class="tool-btn-icon">&#128207;</span><span class="tool-btn-label">Measure</span></button>
+        <button class="mode-btn" id="tool-callout" onclick="setTool('callout')" title="Callouts"><span class="tool-btn-icon">&#9999;&#65039;</span><span class="tool-btn-label">Callout</span></button>
+        <button class="mode-btn" id="tool-highlight" onclick="setTool('highlight')" title="Infographics / Highlights"><span class="tool-btn-icon">&#128444;&#65039;</span><span class="tool-btn-label">Highlight</span></button>
       </div>
+      <button class="preview-toggle" id="preview-toggle" onclick="togglePreview()" title="Preview">&#128065;<span class="preview-toggle-label"> Preview</span></button>
       <span style="flex:1"></span>
       <span id="toolbar-hint" style="font-size:12px;color:#5f5f6e;">Upload an image to begin</span>
     </div>
-    <div class="mobile-toolbar-hint" id="mobile-hint">Tap image to place a hotspot &bull; Tap a pin to view info</div>
+    <div class="mobile-toolbar-hint" id="mobile-hint">Tap image to place, drag to draw &bull; Tap Preview to view</div>
     <div class="canvas-viewport" id="canvas-viewport" onclick="handleCanvasClick(event)">
       <label class="upload-zone" id="upload-zone" for="main-img-input"
         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
@@ -337,6 +363,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       </label>
       <div class="image-canvas" id="image-canvas" style="display:none;">
         <img class="canvas-img" id="canvas-img" src="" alt="Background">
+        <svg class="ann-svg" id="ann-svg"></svg>
       </div>
     </div>
   </div>
@@ -344,62 +371,143 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
   <div class="side-panel">
     <div class="panel-header">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="panel-title">Hotspots</div>
+        <div class="panel-title">Annotations</div>
         <div class="count-badge" id="count-badge">0</div>
       </div>
       <div class="stats-row">
-        <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-hotspots">0</div><div class="stat-label">Hotspots</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-box"><div class="stat-num" id="stat-media">0</div><div class="stat-label">Media</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-measurements">0</div><div class="stat-label">Measure</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-box"><div class="stat-num" id="stat-desc">0</div><div class="stat-label">Text</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-callouts">0</div><div class="stat-label">Callouts</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-box"><div class="stat-num" id="stat-links">0</div><div class="stat-label">Links</div></div>
+        <div class="stat-box"><div class="stat-num" id="stat-highlights">0</div><div class="stat-label">Highlights</div></div>
       </div>
     </div>
     <div class="panel-body" id="hotspot-list">
       <div class="empty-state" id="empty-state">
         <div class="empty-icon">&#9711;</div>
-        <div class="empty-title">No hotspots yet</div>
-        <div class="empty-text">Upload an image then click anywhere on it to place a hotspot.</div>
+        <div class="empty-title">No annotations yet</div>
+        <div class="empty-text">Pick a tool above, then click or drag on the image to add one.</div>
       </div>
     </div>
     <div class="panel-footer">
-      <div class="style-section-title">
-        <span>Hotspot Style</span>
-        <div class="live-preview-pin" id="preview-pin">1</div>
-      </div>
-      <div class="style-row">
-        <div class="style-label">Color</div>
-        <div class="color-swatches">
-          <div class="swatch active" style="background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
-          <div class="swatch" style="background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
-          <div class="swatch" style="background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
-          <div class="swatch" style="background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
-          <div class="swatch" style="background:#f59e0b;" onclick="setHotspotColor('#f59e0b',this)"></div>
-          <div class="swatch" style="background:#ec4899;" onclick="setHotspotColor('#ec4899',this)"></div>
-          <div class="swatch" style="background:#0ea5e9;" onclick="setHotspotColor('#0ea5e9',this)"></div>
-          <div class="swatch swatch-custom" id="swatch-custom" onclick="document.getElementById('custom-color-input').click()">
-            <span>+</span>
-            <input type="color" id="custom-color-input" style="opacity:0;position:absolute;width:0;height:0;" oninput="setHotspotColor(this.value,document.getElementById('swatch-custom'))">
+      <div class="style-panel-section active" id="style-hotspot" data-tool="hotspot">
+        <div class="style-section-title">
+          <span>Hotspot Style</span>
+          <div class="live-preview-pin" id="preview-pin">1</div>
+        </div>
+        <div class="style-row">
+          <div class="style-label">Color</div>
+          <div class="color-swatches">
+            <div class="swatch active" style="background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
+            <div class="swatch" style="background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
+            <div class="swatch" style="background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
+            <div class="swatch" style="background:#f59e0b;" onclick="setHotspotColor('#f59e0b',this)"></div>
+            <div class="swatch" style="background:#ec4899;" onclick="setHotspotColor('#ec4899',this)"></div>
+            <div class="swatch" style="background:#0ea5e9;" onclick="setHotspotColor('#0ea5e9',this)"></div>
+            <div class="swatch swatch-custom" id="swatch-custom" onclick="document.getElementById('custom-color-input').click()">
+              <span>+</span>
+              <input type="color" id="custom-color-input" style="opacity:0;position:absolute;width:0;height:0;" oninput="setHotspotColor(this.value,document.getElementById('swatch-custom'))">
+            </div>
+          </div>
+        </div>
+        <div class="style-row">
+          <div class="style-label">Animation</div>
+          <div class="anim-options">
+            <button class="anim-btn active" onclick="setAnimation('pulse',this)">Pulse</button>
+            <button class="anim-btn" onclick="setAnimation('ripple',this)">Ripple</button>
+            <button class="anim-btn" onclick="setAnimation('bounce',this)">Bounce</button>
+            <button class="anim-btn" onclick="setAnimation('none',this)">None</button>
+          </div>
+        </div>
+        <div class="style-row" id="speed-row">
+          <div class="style-label">Speed</div>
+          <div class="speed-control">
+            <span class="speed-tag">Slow</span>
+            <input type="range" id="pulse-speed" min="0.5" max="4" step="0.1" value="2" oninput="setPulseSpeed(this.value)">
+            <span class="speed-tag">Fast</span>
           </div>
         </div>
       </div>
-      <div class="style-row">
-        <div class="style-label">Animation</div>
-        <div class="anim-options">
-          <button class="anim-btn active" onclick="setAnimation('pulse',this)">Pulse</button>
-          <button class="anim-btn" onclick="setAnimation('ripple',this)">Ripple</button>
-          <button class="anim-btn" onclick="setAnimation('bounce',this)">Bounce</button>
-          <button class="anim-btn" onclick="setAnimation('none',this)">None</button>
+
+      <div class="style-panel-section" id="style-measure" data-tool="measure">
+        <div class="style-section-title"><span>Measurement Style</span></div>
+        <div class="style-row">
+          <div class="style-label">Color</div>
+          <div class="color-swatches">
+            <div class="swatch active" style="background:#3b82f6;" onclick="setMeasureColor('#3b82f6',this)"></div>
+            <div class="swatch" style="background:#ff4d2e;" onclick="setMeasureColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#22c55e;" onclick="setMeasureColor('#22c55e',this)"></div>
+            <div class="swatch" style="background:#a855f7;" onclick="setMeasureColor('#a855f7',this)"></div>
+            <div class="swatch" style="background:#f59e0b;" onclick="setMeasureColor('#f59e0b',this)"></div>
+            <div class="swatch" style="background:#ec4899;" onclick="setMeasureColor('#ec4899',this)"></div>
+            <div class="swatch" style="background:#0ea5e9;" onclick="setMeasureColor('#0ea5e9',this)"></div>
+            <div class="swatch swatch-custom" id="swatch-custom-measure" onclick="document.getElementById('custom-color-input-measure').click()">
+              <span>+</span>
+              <input type="color" id="custom-color-input-measure" style="opacity:0;position:absolute;width:0;height:0;" oninput="setMeasureColor(this.value,document.getElementById('swatch-custom-measure'))">
+            </div>
+          </div>
+        </div>
+        <div class="style-row" style="margin-bottom:0;">
+          <div class="style-label">Distance shown</div>
+          <div style="font-size:12px;color:var(--panel-muted);line-height:1.5;">Measured in source-image pixels, so it stays accurate for developer handoff regardless of zoom.</div>
         </div>
       </div>
-      <div class="style-row" id="speed-row">
-        <div class="style-label">Speed</div>
-        <div class="speed-control">
-          <span class="speed-tag">Slow</span>
-          <input type="range" id="pulse-speed" min="0.5" max="4" step="0.1" value="2" oninput="setPulseSpeed(this.value)">
-          <span class="speed-tag">Fast</span>
+
+      <div class="style-panel-section" id="style-callout" data-tool="callout">
+        <div class="style-section-title"><span>Callout Style</span></div>
+        <div class="style-row" style="margin-bottom:0;">
+          <div class="style-label">Color</div>
+          <div class="color-swatches">
+            <div class="swatch active" style="background:#a855f7;" onclick="setCalloutColor('#a855f7',this)"></div>
+            <div class="swatch" style="background:#ff4d2e;" onclick="setCalloutColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#3b82f6;" onclick="setCalloutColor('#3b82f6',this)"></div>
+            <div class="swatch" style="background:#22c55e;" onclick="setCalloutColor('#22c55e',this)"></div>
+            <div class="swatch" style="background:#f59e0b;" onclick="setCalloutColor('#f59e0b',this)"></div>
+            <div class="swatch" style="background:#ec4899;" onclick="setCalloutColor('#ec4899',this)"></div>
+            <div class="swatch" style="background:#0ea5e9;" onclick="setCalloutColor('#0ea5e9',this)"></div>
+            <div class="swatch swatch-custom" id="swatch-custom-callout" onclick="document.getElementById('custom-color-input-callout').click()">
+              <span>+</span>
+              <input type="color" id="custom-color-input-callout" style="opacity:0;position:absolute;width:0;height:0;" oninput="setCalloutColor(this.value,document.getElementById('swatch-custom-callout'))">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="style-panel-section" id="style-highlight" data-tool="highlight">
+        <div class="style-section-title"><span>Highlight Style</span></div>
+        <div class="style-row">
+          <div class="style-label">Color</div>
+          <div class="color-swatches">
+            <div class="swatch active" style="background:#22c55e;" onclick="setHighlightColor('#22c55e',this)"></div>
+            <div class="swatch" style="background:#ff4d2e;" onclick="setHighlightColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#3b82f6;" onclick="setHighlightColor('#3b82f6',this)"></div>
+            <div class="swatch" style="background:#a855f7;" onclick="setHighlightColor('#a855f7',this)"></div>
+            <div class="swatch" style="background:#f59e0b;" onclick="setHighlightColor('#f59e0b',this)"></div>
+            <div class="swatch" style="background:#ec4899;" onclick="setHighlightColor('#ec4899',this)"></div>
+            <div class="swatch" style="background:#0ea5e9;" onclick="setHighlightColor('#0ea5e9',this)"></div>
+            <div class="swatch swatch-custom" id="swatch-custom-highlight" onclick="document.getElementById('custom-color-input-highlight').click()">
+              <span>+</span>
+              <input type="color" id="custom-color-input-highlight" style="opacity:0;position:absolute;width:0;height:0;" oninput="setHighlightColor(this.value,document.getElementById('swatch-custom-highlight'))">
+            </div>
+          </div>
+        </div>
+        <div class="style-row">
+          <div class="style-label">Shape</div>
+          <div class="shape-toggle" id="highlight-shape-toggle">
+            <button type="button" class="active" onclick="setHighlightShape('rect',this)">Rectangle</button>
+            <button type="button" onclick="setHighlightShape('ellipse',this)">Ellipse</button>
+          </div>
+        </div>
+        <div class="style-row" style="margin-bottom:0;">
+          <div class="style-label">Opacity</div>
+          <div class="opacity-row">
+            <span class="speed-tag">Subtle</span>
+            <input type="range" id="highlight-opacity" min="0.1" max="0.7" step="0.05" value="0.35" oninput="setHighlightOpacity(this.value)">
+            <span class="speed-tag">Bold</span>
+          </div>
         </div>
       </div>
     </div>
@@ -415,7 +523,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
     </button>
     <button class="mobile-nav-tab" id="mnav-hotspots" onclick="mobileNavTo('hotspots')">
       <span class="mobile-nav-tab-icon">&#9711;</span>
-      <span id="mnav-hotspots-label">Hotspots</span>
+      <span id="mnav-hotspots-label">Items</span>
     </button>
     <button class="mobile-nav-tab" id="mnav-style" onclick="mobileNavTo('style')">
       <span class="mobile-nav-tab-icon">&#127752;</span>
@@ -432,24 +540,24 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 <div class="mobile-sheet" id="mobile-sheet-hotspots">
   <div class="mobile-sheet-handle"></div>
   <div class="mobile-sheet-header">
-    <div class="mobile-sheet-title">Hotspots</div>
+    <div class="mobile-sheet-title">Annotations</div>
     <button class="mobile-sheet-close" onclick="closeMobileSheet('hotspots')">&#10005;</button>
   </div>
   <div class="mobile-sheet-body">
     <div class="stats-row" style="margin-top:0;margin-bottom:1rem;">
-      <div class="stat-box"><div class="stat-num" id="m-stat-total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-hotspots">0</div><div class="stat-label">Hotspots</div></div>
       <div class="stat-divider"></div>
-      <div class="stat-box"><div class="stat-num" id="m-stat-media">0</div><div class="stat-label">Media</div></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-measurements">0</div><div class="stat-label">Measure</div></div>
       <div class="stat-divider"></div>
-      <div class="stat-box"><div class="stat-num" id="m-stat-desc">0</div><div class="stat-label">Text</div></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-callouts">0</div><div class="stat-label">Callouts</div></div>
       <div class="stat-divider"></div>
-      <div class="stat-box"><div class="stat-num" id="m-stat-links">0</div><div class="stat-label">Links</div></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-highlights">0</div><div class="stat-label">Highlights</div></div>
     </div>
     <div id="mobile-hotspot-list">
       <div class="empty-state" style="padding:1.5rem 0;">
         <div class="empty-icon">&#9711;</div>
-        <div class="empty-title">No hotspots yet</div>
-        <div class="empty-text">Tap anywhere on your image to add a hotspot.</div>
+        <div class="empty-title">No annotations yet</div>
+        <div class="empty-text">Pick a tool, then tap or drag on your image to add one.</div>
       </div>
     </div>
   </div>
@@ -459,43 +567,108 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 <div class="mobile-sheet" id="mobile-sheet-style">
   <div class="mobile-sheet-handle"></div>
   <div class="mobile-sheet-header">
-    <div class="mobile-sheet-title">Hotspot Style</div>
+    <div class="mobile-sheet-title" id="m-style-sheet-title">Hotspot Style</div>
     <button class="mobile-sheet-close" onclick="closeMobileSheet('style')">&#10005;</button>
   </div>
   <div class="mobile-sheet-body">
-    <div class="style-row">
-      <div class="style-label">Color</div>
-      <div class="color-swatches" style="gap:10px;">
-        <div class="swatch active" style="width:30px;height:30px;background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
-        <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
-        <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
-        <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
-        <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setHotspotColor('#f59e0b',this)"></div>
-        <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setHotspotColor('#ec4899',this)"></div>
-        <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setHotspotColor('#0ea5e9',this)"></div>
-        <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input').click()"><span>+</span></div>
+    <div class="style-panel-section active" id="m-style-hotspot" data-tool="hotspot">
+      <div class="style-row">
+        <div class="style-label">Color</div>
+        <div class="color-swatches" style="gap:10px;">
+          <div class="swatch active" style="width:30px;height:30px;background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setHotspotColor('#f59e0b',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setHotspotColor('#ec4899',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setHotspotColor('#0ea5e9',this)"></div>
+          <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input').click()"><span>+</span></div>
+        </div>
+      </div>
+      <div class="style-row">
+        <div class="style-label">Animation</div>
+        <div class="anim-options" style="gap:8px;">
+          <button class="anim-btn active" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('pulse',this)">Pulse</button>
+          <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('ripple',this)">Ripple</button>
+          <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('bounce',this)">Bounce</button>
+          <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('none',this)">None</button>
+        </div>
+      </div>
+      <div class="style-row" id="m-speed-row">
+        <div class="style-label">Animation Speed</div>
+        <div class="speed-control">
+          <span class="speed-tag">Slow</span>
+          <input type="range" id="m-pulse-speed" min="0.5" max="4" step="0.1" value="2" oninput="setPulseSpeed(this.value);document.getElementById('pulse-speed').value=this.value;">
+          <span class="speed-tag">Fast</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+        <div class="live-preview-pin" id="m-preview-pin" style="width:34px;height:34px;font-size:13px;">1</div>
+        <span style="font-size:12px;color:var(--panel-muted);">Live preview</span>
       </div>
     </div>
-    <div class="style-row">
-      <div class="style-label">Animation</div>
-      <div class="anim-options" style="gap:8px;">
-        <button class="anim-btn active" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('pulse',this)">Pulse</button>
-        <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('ripple',this)">Ripple</button>
-        <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('bounce',this)">Bounce</button>
-        <button class="anim-btn" style="padding:7px 14px;font-size:12px;" onclick="setAnimation('none',this)">None</button>
+
+    <div class="style-panel-section" id="m-style-measure" data-tool="measure">
+      <div class="style-row" style="margin-bottom:0;">
+        <div class="style-label">Color</div>
+        <div class="color-swatches" style="gap:10px;">
+          <div class="swatch active" style="width:30px;height:30px;background:#3b82f6;" onclick="setMeasureColor('#3b82f6',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ff4d2e;" onclick="setMeasureColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setMeasureColor('#22c55e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setMeasureColor('#a855f7',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setMeasureColor('#f59e0b',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setMeasureColor('#ec4899',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setMeasureColor('#0ea5e9',this)"></div>
+          <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input-measure').click()"><span>+</span></div>
+        </div>
       </div>
     </div>
-    <div class="style-row" id="m-speed-row">
-      <div class="style-label">Animation Speed</div>
-      <div class="speed-control">
-        <span class="speed-tag">Slow</span>
-        <input type="range" id="m-pulse-speed" min="0.5" max="4" step="0.1" value="2" oninput="setPulseSpeed(this.value);document.getElementById('pulse-speed').value=this.value;">
-        <span class="speed-tag">Fast</span>
+
+    <div class="style-panel-section" id="m-style-callout" data-tool="callout">
+      <div class="style-row" style="margin-bottom:0;">
+        <div class="style-label">Color</div>
+        <div class="color-swatches" style="gap:10px;">
+          <div class="swatch active" style="width:30px;height:30px;background:#a855f7;" onclick="setCalloutColor('#a855f7',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ff4d2e;" onclick="setCalloutColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setCalloutColor('#3b82f6',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setCalloutColor('#22c55e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setCalloutColor('#f59e0b',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setCalloutColor('#ec4899',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setCalloutColor('#0ea5e9',this)"></div>
+          <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input-callout').click()"><span>+</span></div>
+        </div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
-      <div class="live-preview-pin" id="m-preview-pin" style="width:34px;height:34px;font-size:13px;">1</div>
-      <span style="font-size:12px;color:var(--panel-muted);">Live preview</span>
+
+    <div class="style-panel-section" id="m-style-highlight" data-tool="highlight">
+      <div class="style-row">
+        <div class="style-label">Color</div>
+        <div class="color-swatches" style="gap:10px;">
+          <div class="swatch active" style="width:30px;height:30px;background:#22c55e;" onclick="setHighlightColor('#22c55e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ff4d2e;" onclick="setHighlightColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setHighlightColor('#3b82f6',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setHighlightColor('#a855f7',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setHighlightColor('#f59e0b',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setHighlightColor('#ec4899',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setHighlightColor('#0ea5e9',this)"></div>
+          <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input-highlight').click()"><span>+</span></div>
+        </div>
+      </div>
+      <div class="style-row">
+        <div class="style-label">Shape</div>
+        <div class="shape-toggle" id="m-highlight-shape-toggle">
+          <button type="button" class="active" style="padding:7px 11px;" onclick="setHighlightShape('rect',this)">Rectangle</button>
+          <button type="button" style="padding:7px 11px;" onclick="setHighlightShape('ellipse',this)">Ellipse</button>
+        </div>
+      </div>
+      <div class="style-row" style="margin-bottom:0;">
+        <div class="style-label">Opacity</div>
+        <div class="opacity-row">
+          <span class="speed-tag">Subtle</span>
+          <input type="range" id="m-highlight-opacity" min="0.1" max="0.7" step="0.05" value="0.35" oninput="setHighlightOpacity(this.value);document.getElementById('highlight-opacity').value=this.value;">
+          <span class="speed-tag">Bold</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -560,6 +733,36 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
   </div>
 </div>
 
+<!-- ANNOTATION MODAL (Callout / Highlight / Measurement note) -->
+<div class="modal-overlay" id="annotation-modal" style="display:none;" onclick="closeAnnotationModalOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="ann-modal-title">Add Callout</div>
+        <div class="modal-sub" id="ann-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeAnnotationModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" id="ann-shape-group" style="display:none;">
+        <label>Shape</label>
+        <div class="shape-toggle" id="ann-shape-toggle">
+          <button type="button" class="active" onclick="setAnnShape('rect')">Rectangle</button>
+          <button type="button" onclick="setAnnShape('ellipse')">Ellipse</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="ann-text" id="ann-text-label">Label <span style="color:var(--accent);">*</span></label>
+        <input type="text" id="ann-text" placeholder="e.g. Fix alignment here" maxlength="120">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAnnotationModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAnnotationModal()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- EXPORT MODAL -->
 <div class="modal-overlay" id="export-modal" style="display:none;" onclick="closeExportOnOverlay(event)">
   <div class="modal" style="width:660px;">
@@ -606,7 +809,11 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 
 <script>
 var hotspots = [];
-var mode = 'add';
+var measurements = [];
+var callouts = [];
+var highlights = [];
+var tool = 'hotspot'; // 'hotspot' | 'measure' | 'callout' | 'highlight'
+var previewMode = false;
 var pendingX = 0, pendingY = 0;
 var editingId = null;
 var currentMedia = null;
@@ -614,16 +821,59 @@ var backgroundDataURL = null;
 var hsColor = '#ff4d2e';
 var hsAnimation = 'pulse';
 var hsPulseSpeed = 2.0;
+var measureColor = '#3b82f6';
+var calloutColor = '#a855f7';
+var highlightColor = '#22c55e';
+var highlightShape = 'rect';
+var highlightOpacity = 0.35;
 var exportTab = 'html';
+var nextAnnId = 1;
+function genAnnId() { return 'a' + (nextAnnId++); }
 
-function setMode(m) {
-  mode = m;
-  document.getElementById('mode-add').classList.toggle('active', m === 'add');
-  document.getElementById('mode-view').classList.toggle('active', m === 'view');
-  document.getElementById('canvas-viewport').classList.toggle('view-mode', m === 'view');
-  document.getElementById('toolbar-hint').textContent = m === 'add'
-    ? (isTouch ? 'Tap the image to place a hotspot' : 'Click on image to place a hotspot')
-    : (isTouch ? 'Tap pins to see tooltips' : 'Hover over pins to see tooltips');
+function setTool(t) {
+  tool = t;
+  ['hotspot', 'measure', 'callout', 'highlight'].forEach(function(x) {
+    var btn = document.getElementById('tool-' + x);
+    if (btn) btn.classList.toggle('active', x === t);
+  });
+  ['hotspot', 'measure', 'callout', 'highlight'].forEach(function(x) {
+    var sec = document.getElementById('style-' + x);
+    if (sec) sec.classList.toggle('active', x === t);
+    var msec = document.getElementById('m-style-' + x);
+    if (msec) msec.classList.toggle('active', x === t);
+  });
+  var titles = { hotspot: 'Hotspot Style', measure: 'Measurement Style', callout: 'Callout Style', highlight: 'Highlight Style' };
+  var mTitle = document.getElementById('m-style-sheet-title');
+  if (mTitle) mTitle.textContent = titles[t];
+  updateToolbarHint();
+  updateDrawingActiveClass();
+}
+
+function togglePreview() {
+  previewMode = !previewMode;
+  document.getElementById('preview-toggle').classList.toggle('active', previewMode);
+  document.getElementById('canvas-viewport').classList.toggle('view-mode', previewMode);
+  updateToolbarHint();
+  updateDrawingActiveClass();
+}
+
+function updateToolbarHint() {
+  var hintEl = document.getElementById('toolbar-hint');
+  if (!hintEl) return;
+  if (!backgroundDataURL) { hintEl.textContent = 'Upload an image to begin'; return; }
+  if (previewMode) {
+    hintEl.textContent = isTouch ? 'Tap hotspots to see tooltips' : 'Hover over hotspots to see tooltips';
+    return;
+  }
+  var verb = isTouch ? 'Tap' : 'Click';
+  var dragVerb = isTouch ? 'Drag' : 'Click and drag';
+  var text = {
+    hotspot: verb + ' the image to place a hotspot',
+    measure: dragVerb + ' to draw a measurement line',
+    callout: dragVerb + ' to draw a callout arrow',
+    highlight: dragVerb + ' to draw a highlight zone'
+  }[tool];
+  hintEl.textContent = text;
 }
 
 function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
@@ -639,10 +889,12 @@ function loadMainImage(file) {
   var reader = new FileReader();
   reader.onload = function(ev) {
     backgroundDataURL = ev.target.result;
-    document.getElementById('canvas-img').src = ev.target.result;
+    var img = document.getElementById('canvas-img');
+    img.onload = function() { redrawAllAnnotations(); };
+    img.src = ev.target.result;
     document.getElementById('upload-zone').style.display = 'none';
     document.getElementById('image-canvas').style.display = 'inline-block';
-    document.getElementById('toolbar-hint').textContent = isTouch ? 'Tap the image to place a hotspot' : 'Click on image to place a hotspot';
+    updateToolbarHint();
     document.getElementById('export-btn').disabled = false;
   };
   reader.readAsDataURL(file);
@@ -652,6 +904,11 @@ function clampTooltip(el) {
   var tip = el.querySelector('.hs-tooltip');
   var container = document.getElementById('image-canvas');
   if (!tip || !container) return;
+  // Suspend just the transform transition (keep opacity's fade) so a reset+remeasure
+  // here can't read a mid-animation rect left over from a previous clamp call
+  // (e.g. right after dragging the pin) and think it's already correctly placed.
+  var prevTransitionProperty = tip.style.transitionProperty;
+  tip.style.transitionProperty = 'opacity';
   el.style.setProperty('--tt-dx', '0px');
   el.classList.remove('tt-flip');
   var cRect = container.getBoundingClientRect();
@@ -662,6 +919,8 @@ function clampTooltip(el) {
   else if (tRect.right > cRect.right - pad) dx = (cRect.right - pad) - tRect.right;
   if (dx !== 0) el.style.setProperty('--tt-dx', dx + 'px');
   if (tRect.top < cRect.top + pad) el.classList.add('tt-flip');
+  tip.offsetWidth;
+  tip.style.transitionProperty = prevTransitionProperty;
 }
 
 function attachHotspotDrag(el, hs) {
@@ -689,7 +948,7 @@ function attachHotspotDrag(el, hs) {
     document.removeEventListener('mouseup', onMouseUp);
   }
   el.addEventListener('mousedown', function(e) {
-    if (mode !== 'add' || e.button !== 0) return;
+    if (previewMode || e.button !== 0) return;
     e.preventDefault(); e.stopPropagation();
     active = true; moved = false; startX = e.clientX; startY = e.clientY;
     document.addEventListener('mousemove', onMouseMove);
@@ -697,7 +956,7 @@ function attachHotspotDrag(el, hs) {
   });
 
   el.addEventListener('touchstart', function(e) {
-    if (mode !== 'add' || e.touches.length !== 1) return;
+    if (previewMode || e.touches.length !== 1) return;
     active = true; moved = false;
     startX = e.touches[0].clientX; startY = e.touches[0].clientY;
   }, { passive: true });
@@ -717,7 +976,7 @@ function attachHotspotDrag(el, hs) {
 }
 
 function handleCanvasClick(e) {
-  if (mode !== 'add' || !backgroundDataURL) return;
+  if (previewMode || tool !== 'hotspot' || !backgroundDataURL) return;
   if (e.target.closest('.hotspot')) return;
   var img = document.getElementById('canvas-img');
   var rect = img.getBoundingClientRect();
@@ -857,7 +1116,7 @@ function createHotspotEl(hs) {
   el.innerHTML = '<div class="hotspot-pin">' + idx + '</div>' + buildTooltipHTML(hs);
   el.addEventListener('click', function(e) {
     if (el._justDragged) { el._justDragged = false; e.stopPropagation(); return; }
-    if (mode === 'add' && !isMobile) { e.stopPropagation(); editingId = hs.id; openModal(); }
+    if (!previewMode && !isMobile) { e.stopPropagation(); editingId = hs.id; openModal(); }
   });
   attachHotspotDrag(el, hs);
   document.getElementById('image-canvas').appendChild(el);
@@ -880,6 +1139,335 @@ function deleteHotspot(id) {
   var el = document.getElementById('hs-' + id); if (el) el.remove();
   hotspots.forEach(function(h, i) { var p = document.querySelector('#hs-' + h.id + ' .hotspot-pin'); if (p) p.textContent = i + 1; });
   renderList(); updateCounter();
+}
+
+// ── MEASUREMENTS / CALLOUTS / HIGHLIGHTS ─────────────────────────────────────
+
+function naturalSize() {
+  var img = document.getElementById('canvas-img');
+  return { w: img.naturalWidth || 1, h: img.naturalHeight || 1 };
+}
+function svgNS(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+function updateAnnSvgViewBox() {
+  var svg = document.getElementById('ann-svg');
+  var img = document.getElementById('canvas-img');
+  if (!svg || !img || !img.clientWidth) return;
+  svg.setAttribute('viewBox', '0 0 ' + img.clientWidth + ' ' + img.clientHeight);
+}
+function pctToPx(pct, dim) {
+  var img = document.getElementById('canvas-img');
+  return dim === 'w' ? (pct / 100 * img.clientWidth) : (pct / 100 * img.clientHeight);
+}
+function measureDistancePx(m) {
+  var n = naturalSize();
+  var dx = (m.x2 - m.x1) / 100 * n.w, dy = (m.y2 - m.y1) / 100 * n.h;
+  return Math.round(Math.sqrt(dx * dx + dy * dy));
+}
+function measureDistanceLabel(m) { return measureDistancePx(m) + 'px'; }
+
+function createMeasurementEl(m) {
+  var svg = document.getElementById('ann-svg');
+  var g = svgNS('g'); g.setAttribute('id', 'm-' + m.id);
+  var x1 = pctToPx(m.x1, 'w'), y1 = pctToPx(m.y1, 'h'), x2 = pctToPx(m.x2, 'w'), y2 = pctToPx(m.y2, 'h');
+  var ang = Math.atan2(y2 - y1, x2 - x1);
+  var tickLen = 8;
+  function tick(cx, cy) {
+    var tx = Math.cos(ang + Math.PI / 2) * tickLen, ty = Math.sin(ang + Math.PI / 2) * tickLen;
+    var l = svgNS('line');
+    l.setAttribute('x1', cx - tx); l.setAttribute('y1', cy - ty);
+    l.setAttribute('x2', cx + tx); l.setAttribute('y2', cy + ty);
+    l.setAttribute('stroke', m.color); l.setAttribute('stroke-width', '2');
+    l.setAttribute('vector-effect', 'non-scaling-stroke');
+    return l;
+  }
+  var line = svgNS('line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', m.color); line.setAttribute('stroke-width', '2');
+  line.setAttribute('vector-effect', 'non-scaling-stroke');
+  g.appendChild(line);
+  g.appendChild(tick(x1, y1));
+  g.appendChild(tick(x2, y2));
+  svg.appendChild(g);
+
+  var label = document.createElement('div');
+  label.className = 'ann-label'; label.id = 'ml-' + m.id;
+  label.style.left = ((m.x1 + m.x2) / 2) + '%'; label.style.top = ((m.y1 + m.y2) / 2) + '%';
+  label.textContent = measureDistanceLabel(m) + (m.note ? ' · ' + m.note : '');
+  document.getElementById('image-canvas').appendChild(label);
+}
+function deleteMeasurement(id) {
+  measurements = measurements.filter(function(m) { return m.id !== id; });
+  var g = document.getElementById('m-' + id); if (g) g.remove();
+  var l = document.getElementById('ml-' + id); if (l) l.remove();
+  renderList(); updateCounter();
+}
+
+function createCalloutEl(c) {
+  var svg = document.getElementById('ann-svg');
+  var g = svgNS('g'); g.setAttribute('id', 'co-' + c.id);
+  var x1 = pctToPx(c.x1, 'w'), y1 = pctToPx(c.y1, 'h'), x2 = pctToPx(c.x2, 'w'), y2 = pctToPx(c.y2, 'h');
+  var line = svgNS('line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', c.color); line.setAttribute('stroke-width', '2.5');
+  line.setAttribute('vector-effect', 'non-scaling-stroke');
+  g.appendChild(line);
+  var ang = Math.atan2(y2 - y1, x2 - x1);
+  var headLen = 12;
+  var p1x = x2 - headLen * Math.cos(ang - Math.PI / 7), p1y = y2 - headLen * Math.sin(ang - Math.PI / 7);
+  var p2x = x2 - headLen * Math.cos(ang + Math.PI / 7), p2y = y2 - headLen * Math.sin(ang + Math.PI / 7);
+  var poly = svgNS('polygon');
+  poly.setAttribute('points', x2 + ',' + y2 + ' ' + p1x + ',' + p1y + ' ' + p2x + ',' + p2y);
+  poly.setAttribute('fill', c.color);
+  g.appendChild(poly);
+  svg.appendChild(g);
+
+  var label = document.createElement('div');
+  label.className = 'callout-label'; label.id = 'col-' + c.id;
+  label.style.left = c.x1 + '%'; label.style.top = c.y1 + '%';
+  label.textContent = c.text;
+  document.getElementById('image-canvas').appendChild(label);
+}
+function deleteCallout(id) {
+  callouts = callouts.filter(function(c) { return c.id !== id; });
+  var g = document.getElementById('co-' + id); if (g) g.remove();
+  var l = document.getElementById('col-' + id); if (l) l.remove();
+  renderList(); updateCounter();
+}
+
+function createHighlightEl(h) {
+  var div = document.createElement('div');
+  div.className = 'highlight-zone'; div.id = 'hl-' + h.id;
+  div.style.left = h.x + '%'; div.style.top = h.y + '%'; div.style.width = h.w + '%'; div.style.height = h.h + '%';
+  div.style.background = hexToRgba(h.color, h.opacity);
+  div.style.border = '2px solid ' + h.color;
+  div.style.borderRadius = h.shape === 'ellipse' ? '50%' : '6px';
+  if (h.text) {
+    var lbl = document.createElement('div');
+    lbl.className = 'highlight-zone-label';
+    lbl.textContent = h.text;
+    lbl.style.background = h.color;
+    div.appendChild(lbl);
+  }
+  document.getElementById('image-canvas').appendChild(div);
+}
+function deleteHighlight(id) {
+  highlights = highlights.filter(function(h) { return h.id !== id; });
+  var el = document.getElementById('hl-' + id); if (el) el.remove();
+  renderList(); updateCounter();
+}
+
+function redrawAllAnnotations() {
+  var img = document.getElementById('canvas-img');
+  if (!img || !img.clientWidth) return;
+  var svg = document.getElementById('ann-svg');
+  if (svg) svg.innerHTML = '';
+  document.querySelectorAll('.ann-label, .callout-label, .highlight-zone').forEach(function(el) { el.remove(); });
+  updateAnnSvgViewBox();
+  measurements.forEach(createMeasurementEl);
+  callouts.forEach(createCalloutEl);
+  highlights.forEach(createHighlightEl);
+}
+
+// ── Drawing: pointer-based drag creation for measure/callout/highlight ──────
+var drawingState = null;
+var pendingHighlightShape = 'rect';
+
+function pctFromEvent(e) {
+  var img = document.getElementById('canvas-img');
+  var r = img.getBoundingClientRect();
+  var x = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
+  var y = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
+  return { x: x, y: y };
+}
+function clearDrawingPreview() {
+  var l = document.getElementById('draw-preview-line'); if (l) l.remove();
+  var b = document.getElementById('draw-preview-box'); if (b) b.remove();
+}
+function renderDrawingPreview() {
+  clearDrawingPreview();
+  if (!drawingState) return;
+  var ds = drawingState;
+  if (ds.tool === 'measure' || ds.tool === 'callout') {
+    var svg = document.getElementById('ann-svg');
+    var x1 = pctToPx(ds.x1, 'w'), y1 = pctToPx(ds.y1, 'h'), x2 = pctToPx(ds.x2, 'w'), y2 = pctToPx(ds.y2, 'h');
+    var line = svgNS('line');
+    line.setAttribute('id', 'draw-preview-line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', ds.tool === 'measure' ? measureColor : calloutColor);
+    line.setAttribute('stroke-width', '2.5'); line.setAttribute('stroke-dasharray', '6,4');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(line);
+  } else if (ds.tool === 'highlight') {
+    var div = document.createElement('div');
+    div.id = 'draw-preview-box'; div.className = 'highlight-zone';
+    var x = Math.min(ds.x1, ds.x2), y = Math.min(ds.y1, ds.y2), w = Math.abs(ds.x2 - ds.x1), h2 = Math.abs(ds.y2 - ds.y1);
+    div.style.left = x + '%'; div.style.top = y + '%'; div.style.width = w + '%'; div.style.height = h2 + '%';
+    div.style.background = hexToRgba(highlightColor, highlightOpacity);
+    div.style.border = '2px dashed ' + highlightColor;
+    div.style.borderRadius = pendingHighlightShape === 'ellipse' ? '50%' : '6px';
+    document.getElementById('image-canvas').appendChild(div);
+  }
+}
+function finishDrawing() {
+  var ds = drawingState; drawingState = null; clearDrawingPreview();
+  if (!ds) return;
+  var dx = Math.abs(ds.x2 - ds.x1), dy = Math.abs(ds.y2 - ds.y1);
+  if (dx < 0.75 && dy < 0.75) return;
+  if (ds.tool === 'measure') {
+    var m = { id: genAnnId(), x1: ds.x1, y1: ds.y1, x2: ds.x2, y2: ds.y2, color: measureColor, note: '' };
+    measurements.push(m); createMeasurementEl(m);
+    renderList(); updateCounter();
+  } else if (ds.tool === 'callout') {
+    openCalloutModal(ds.x1, ds.y1, ds.x2, ds.y2);
+  } else if (ds.tool === 'highlight') {
+    openHighlightModal(Math.min(ds.x1, ds.x2), Math.min(ds.y1, ds.y2), dx, dy);
+  }
+}
+
+function updateDrawingActiveClass() {
+  var vp = document.getElementById('canvas-viewport');
+  if (vp) vp.classList.toggle('drawing-active', !previewMode && tool !== 'hotspot');
+}
+
+(function initDrawingTools() {
+  var viewport = document.getElementById('canvas-viewport');
+  viewport.addEventListener('pointerdown', function(e) {
+    if (previewMode || tool === 'hotspot' || !backgroundDataURL) return;
+    if (e.target.closest('.hotspot')) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    var p = pctFromEvent(e);
+    drawingState = { tool: tool, x1: p.x, y1: p.y, x2: p.x, y2: p.y, pointerId: e.pointerId };
+    try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
+    renderDrawingPreview();
+  });
+  viewport.addEventListener('pointermove', function(e) {
+    if (!drawingState || e.pointerId !== drawingState.pointerId) return;
+    var p = pctFromEvent(e);
+    drawingState.x2 = p.x; drawingState.y2 = p.y;
+    renderDrawingPreview();
+  });
+  viewport.addEventListener('pointerup', function(e) {
+    if (!drawingState || e.pointerId !== drawingState.pointerId) return;
+    finishDrawing();
+  });
+  viewport.addEventListener('pointercancel', function() {
+    drawingState = null; clearDrawingPreview();
+  });
+})();
+
+// ── Annotation modal: Callout / Highlight create, Measurement note edit ─────
+var annModalContext = null;
+var pendingAnnotation = null;
+var editingMeasurementId = null;
+
+function setAnnShape(shape) {
+  pendingHighlightShape = shape;
+  document.querySelectorAll('#ann-shape-toggle button').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === (shape === 'rect' ? 'rectangle' : 'ellipse'));
+  });
+}
+
+function openCalloutModal(x1, y1, x2, y2) {
+  annModalContext = 'callout';
+  pendingAnnotation = { x1: x1, y1: y1, x2: x2, y2: y2 };
+  document.getElementById('ann-modal-title').textContent = 'Add Callout';
+  document.getElementById('ann-modal-sub').textContent = 'Label this callout arrow';
+  document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--accent);">*</span>';
+  document.getElementById('ann-text').value = '';
+  document.getElementById('ann-text').style.borderColor = '';
+  document.getElementById('ann-text').placeholder = 'e.g. Fix alignment here';
+  document.getElementById('ann-shape-group').style.display = 'none';
+  document.getElementById('annotation-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
+}
+
+function openHighlightModal(x, y, w, h) {
+  annModalContext = 'highlight';
+  pendingAnnotation = { x: x, y: y, w: w, h: h };
+  setAnnShape(highlightShape);
+  document.getElementById('ann-modal-title').textContent = 'Add Highlight';
+  document.getElementById('ann-modal-sub').textContent = 'Optional label for this zone';
+  document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
+  document.getElementById('ann-text').value = '';
+  document.getElementById('ann-text').style.borderColor = '';
+  document.getElementById('ann-text').placeholder = 'e.g. Move this section up';
+  document.getElementById('ann-shape-group').style.display = 'block';
+  document.getElementById('annotation-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
+}
+
+function openMeasurementEditModal(id) {
+  var m = measurements.find(function(x) { return x.id === id; });
+  if (!m) return;
+  annModalContext = 'measurement-edit';
+  editingMeasurementId = id;
+  document.getElementById('ann-modal-title').textContent = 'Edit Measurement';
+  document.getElementById('ann-modal-sub').textContent = measureDistanceLabel(m);
+  document.getElementById('ann-text-label').innerHTML = 'Note <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
+  document.getElementById('ann-text').value = m.note || '';
+  document.getElementById('ann-text').style.borderColor = '';
+  document.getElementById('ann-text').placeholder = 'e.g. Section spacing';
+  document.getElementById('ann-shape-group').style.display = 'none';
+  document.getElementById('annotation-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
+}
+
+function closeAnnotationModal() {
+  document.getElementById('annotation-modal').style.display = 'none';
+  annModalContext = null; pendingAnnotation = null; editingMeasurementId = null;
+}
+function closeAnnotationModalOnOverlay(e) { if (e.target === document.getElementById('annotation-modal')) closeAnnotationModal(); }
+
+function saveAnnotationModal() {
+  var text = document.getElementById('ann-text').value.trim();
+  if (annModalContext === 'callout') {
+    if (!text) { document.getElementById('ann-text').style.borderColor = '#ff4d2e'; document.getElementById('ann-text').focus(); return; }
+    var c = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, text: text, color: calloutColor };
+    callouts.push(c); createCalloutEl(c);
+  } else if (annModalContext === 'highlight') {
+    var h = { id: genAnnId(), x: pendingAnnotation.x, y: pendingAnnotation.y, w: pendingAnnotation.w, h: pendingAnnotation.h, shape: pendingHighlightShape, text: text, color: highlightColor, opacity: highlightOpacity };
+    highlights.push(h); createHighlightEl(h);
+  } else if (annModalContext === 'measurement-edit') {
+    var m = measurements.find(function(x) { return x.id === editingMeasurementId; });
+    if (m) {
+      m.note = text;
+      var lbl = document.getElementById('ml-' + m.id);
+      if (lbl) lbl.textContent = measureDistanceLabel(m) + (m.note ? ' · ' + m.note : '');
+    }
+  }
+  closeAnnotationModal();
+  renderList(); updateCounter();
+}
+
+function buildMeasurementCardHTML(m) {
+  return '<div class="hc-top">'
+    + '<div class="hc-num" style="background:' + m.color + '">&#128207;</div>'
+    + '<div class="hc-info"><div class="hc-title">' + measureDistanceLabel(m) + '</div>'
+    + '<div class="hc-badges">' + (m.note ? '<span class="hc-badge hc-badge-text">' + escHTML(m.note) + '</span>' : '<span class="hc-badge hc-badge-empty">No note</span>') + '</div></div>'
+    + '<div class="hc-actions">'
+    + '<button class="hc-action-btn" onclick="event.stopPropagation();openMeasurementEditModal(\'' + m.id + '\')">&#9998;</button>'
+    + '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteMeasurement(\'' + m.id + '\')">&#128465;</button>'
+    + '</div></div>';
+}
+function buildCalloutCardHTML(c) {
+  return '<div class="hc-top">'
+    + '<div class="hc-num" style="background:' + c.color + '">&#9999;&#65039;</div>'
+    + '<div class="hc-info"><div class="hc-title">' + escHTML(c.text) + '</div>'
+    + '<div class="hc-badges"><span class="hc-badge hc-badge-text">Callout</span></div></div>'
+    + '<div class="hc-actions">'
+    + '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteCallout(\'' + c.id + '\')">&#128465;</button>'
+    + '</div></div>';
+}
+function buildHighlightCardHTML(h) {
+  var shapeLabel = h.shape === 'ellipse' ? 'Ellipse' : 'Rectangle';
+  return '<div class="hc-top">'
+    + '<div class="hc-num" style="background:' + h.color + (h.shape === 'ellipse' ? ';border-radius:50%' : '') + '">&#9723;</div>'
+    + '<div class="hc-info"><div class="hc-title">' + (h.text ? escHTML(h.text) : 'Highlight zone') + '</div>'
+    + '<div class="hc-badges"><span class="hc-badge hc-badge-media">' + shapeLabel + '</span></div></div>'
+    + '<div class="hc-actions">'
+    + '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteHighlight(\'' + h.id + '\')">&#128465;</button>'
+    + '</div></div>';
 }
 
 function hasText(hs) { return !!(hs.text && hs.text.trim()); }
@@ -926,41 +1514,63 @@ function buildHotspotCardHTML(hs, i, mobile) {
 
 var emptyStateHTML = document.getElementById('empty-state').outerHTML;
 
+function annotationCardsHTML(mobile) {
+  var total = hotspots.length + measurements.length + callouts.length + highlights.length;
+  if (total === 0) return null;
+  var cardOpen = mobile ? '<div class="hotspot-card" style="padding:12px 14px;margin-bottom:10px;">' : '<div class="hotspot-card">';
+  var html = '';
+  if (hotspots.length) {
+    html += '<div class="ann-section-label">Hotspots</div>';
+    hotspots.forEach(function(hs, i) { html += cardOpen + buildHotspotCardHTML(hs, i, mobile) + '</div>'; });
+  }
+  if (measurements.length) {
+    html += '<div class="ann-section-label">Measurements</div>';
+    measurements.forEach(function(m) { html += cardOpen + buildMeasurementCardHTML(m) + '</div>'; });
+  }
+  if (callouts.length) {
+    html += '<div class="ann-section-label">Callouts</div>';
+    callouts.forEach(function(c) { html += cardOpen + buildCalloutCardHTML(c) + '</div>'; });
+  }
+  if (highlights.length) {
+    html += '<div class="ann-section-label">Highlights</div>';
+    highlights.forEach(function(h) { html += cardOpen + buildHighlightCardHTML(h) + '</div>'; });
+  }
+  return html;
+}
+
 function renderList() {
   var list = document.getElementById('hotspot-list');
-  if (hotspots.length === 0) { list.innerHTML = emptyStateHTML; return; }
-  list.innerHTML = '';
-  hotspots.forEach(function(hs, i) {
-    var card = document.createElement('div');
-    card.className = 'hotspot-card';
-    card.innerHTML = buildHotspotCardHTML(hs, i, false);
-    list.appendChild(card);
-  });
+  var html = annotationCardsHTML(false);
+  list.innerHTML = html !== null ? html : emptyStateHTML;
 }
 function editHotspotFromList(id) { editingId = id; openModal(); }
 
 function updateCounter() {
-  var c = hotspots.length;
+  var c = hotspots.length + measurements.length + callouts.length + highlights.length;
   var badge = document.getElementById('count-badge');
   badge.textContent = c;
   badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
   setTimeout(function() { badge.classList.remove('bump'); }, 300);
-  document.getElementById('stat-total').textContent = c;
-  document.getElementById('stat-media').textContent = hotspots.filter(hasMedia).length;
-  document.getElementById('stat-desc').textContent = hotspots.filter(hasText).length;
-  document.getElementById('stat-links').textContent = hotspots.filter(hasLink).length;
+  document.getElementById('stat-hotspots').textContent = hotspots.length;
+  document.getElementById('stat-measurements').textContent = measurements.length;
+  document.getElementById('stat-callouts').textContent = callouts.length;
+  document.getElementById('stat-highlights').textContent = highlights.length;
   document.getElementById('export-btn').disabled = c === 0 || !backgroundDataURL;
 }
 
 function resetTool() {
-  if ((hotspots.length > 0 || backgroundDataURL) && !confirm('Reset everything?')) return;
-  hotspots = []; backgroundDataURL = null;
+  var any = hotspots.length > 0 || measurements.length > 0 || callouts.length > 0 || highlights.length > 0 || backgroundDataURL;
+  if (any && !confirm('Reset everything?')) return;
+  hotspots = []; measurements = []; callouts = []; highlights = [];
+  backgroundDataURL = null;
   document.getElementById('canvas-img').src = '';
   document.getElementById('image-canvas').style.display = 'none';
   document.getElementById('upload-zone').style.display = 'flex';
-  document.getElementById('toolbar-hint').textContent = 'Upload an image to begin';
+  updateToolbarHint();
   document.getElementById('main-img-input').value = '';
   document.querySelectorAll('.hotspot').forEach(function(el) { el.remove(); });
+  document.querySelectorAll('.ann-label,.callout-label,.highlight-zone').forEach(function(el) { el.remove(); });
+  var svg = document.getElementById('ann-svg'); if (svg) svg.innerHTML = '';
   renderList(); updateCounter();
 }
 
@@ -974,10 +1584,39 @@ function hexToRgba(hex, a) {
 }
 function setHotspotColor(color, el) {
   hsColor = color;
-  document.querySelectorAll('.swatch').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('#style-hotspot .swatch, #m-style-hotspot .swatch').forEach(function(s) { s.classList.remove('active'); });
   el.classList.add('active');
   if (el.id === 'swatch-custom') el.style.background = color;
   updatePreviewPin(); updateDynamicStyles();
+}
+function setMeasureColor(color, el) {
+  measureColor = color;
+  document.querySelectorAll('#style-measure .swatch, #m-style-measure .swatch').forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+  if (el.id === 'swatch-custom-measure') el.style.background = color;
+}
+function setCalloutColor(color, el) {
+  calloutColor = color;
+  document.querySelectorAll('#style-callout .swatch, #m-style-callout .swatch').forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+  if (el.id === 'swatch-custom-callout') el.style.background = color;
+}
+function setHighlightColor(color, el) {
+  highlightColor = color;
+  document.querySelectorAll('#style-highlight .swatch, #m-style-highlight .swatch').forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+  if (el.id === 'swatch-custom-highlight') el.style.background = color;
+}
+function setHighlightShape(shape) {
+  highlightShape = shape;
+  document.querySelectorAll('#highlight-shape-toggle button, #m-highlight-shape-toggle button').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.trim().toLowerCase() === (shape === 'rect' ? 'rectangle' : 'ellipse'));
+  });
+}
+function setHighlightOpacity(val) {
+  highlightOpacity = parseFloat(val);
+  var d = document.getElementById('highlight-opacity'); if (d) d.value = val;
+  var m = document.getElementById('m-highlight-opacity'); if (m) m.value = val;
 }
 function setAnimation(anim, el) {
   hsAnimation = anim;
@@ -1035,6 +1674,14 @@ function hsDataForExport() {
   }));
 }
 
+function annotationsDataForExport() {
+  return JSON.stringify({
+    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, note: m.note || '' }; }),
+    callouts: callouts.map(function(c) { return { x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2, color: c.color, text: c.text }; }),
+    highlights: highlights.map(function(h) { return { x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' }; })
+  });
+}
+
 function generateExportHTML() {
   var color = hsColor;
   var dur = (1 / hsPulseSpeed * 2).toFixed(2);
@@ -1079,15 +1726,22 @@ function generateExportHTML() {
     + '.tt-aplay{width:28px;height:28px;background:' + color + ';border-radius:50%;border:none;color:#fff;cursor:pointer;font-size:10px;flex-shrink:0}\n'
     + '.tt-aname{font-size:12px;color:#555}\n'
     + '.tt-bh{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:system-ui,sans-serif}\n'
-    + '.tt-bh:hover{opacity:.85}';
+    + '.tt-bh:hover{opacity:.85}\n'
+    + '.ann-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}\n'
+    + '.ann-label{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:system-ui,sans-serif}\n'
+    + '.callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
+    + '.highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
+    + '.highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
 
   // Build JS using createElement to avoid any HTML escaping issues
   var js = ''
     + '(function(){\n'
     + 'var d=' + data + ',openId=null;\n'
+    + 'var annData=' + annotationsDataForExport() + ';\n'
     + 'function esc(s){var d=document.createElement("div");d.appendChild(document.createTextNode(s));return d.innerHTML;}\n'
     + 'function bhUrl(id){return "https://www.bhphotovideo.com/c/product/"+id+"/na.html";}\n'
     + 'function clampTip(wrap,tip){\n'
+    + '  var pt=tip.style.transitionProperty;tip.style.transitionProperty="opacity";\n'
     + '  wrap.style.setProperty("--tt-dx","0px");wrap.classList.remove("tt-flip");\n'
     + '  var cRect=document.getElementById("c").getBoundingClientRect();\n'
     + '  var tRect=tip.getBoundingClientRect();\n'
@@ -1096,6 +1750,7 @@ function generateExportHTML() {
     + '  else if(tRect.right>cRect.right-pad) dx=(cRect.right-pad)-tRect.right;\n'
     + '  if(dx!==0) wrap.style.setProperty("--tt-dx",dx+"px");\n'
     + '  if(tRect.top<cRect.top+pad) wrap.classList.add("tt-flip");\n'
+    + '  tip.offsetWidth;tip.style.transitionProperty=pt;\n'
     + '}\n'
     + 'd.forEach(function(h,i){\n'
     + '  var wrap=document.createElement("div");\n'
@@ -1127,6 +1782,55 @@ function generateExportHTML() {
     + '  document.getElementById("c").appendChild(wrap);\n'
     + '});\n'
     + 'document.addEventListener("click",function(){document.querySelectorAll(".hotspot").forEach(function(x){x.classList.remove("open");});openId=null;});\n'
+    + 'var svgNS2="http://www.w3.org/2000/svg";\n'
+    + 'function svgEl2(tag){return document.createElementNS(svgNS2,tag);}\n'
+    + 'var annSvg=svgEl2("svg");annSvg.setAttribute("class","ann-svg");document.getElementById("c").appendChild(annSvg);\n'
+    + 'var mainImg=document.querySelector("#c img");\n'
+    + 'function pctToPxImg(pct,dim){return dim==="w"?(pct/100*mainImg.clientWidth):(pct/100*mainImg.clientHeight);}\n'
+    + 'function hexToRgbaExp(hex,a){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return "rgba("+r+","+g+","+b+","+a+")";}\n'
+    + 'function drawMeasurements(){\n'
+    + '  annData.measurements.forEach(function(m){\n'
+    + '    var x1=pctToPxImg(m.x1,"w"),y1=pctToPxImg(m.y1,"h"),x2=pctToPxImg(m.x2,"w"),y2=pctToPxImg(m.y2,"h");\n'
+    + '    var ang=Math.atan2(y2-y1,x2-x1),tickLen=8;\n'
+    + '    function tick(cx,cy){var tx=Math.cos(ang+Math.PI/2)*tickLen,ty=Math.sin(ang+Math.PI/2)*tickLen;var l=svgEl2("line");l.setAttribute("x1",cx-tx);l.setAttribute("y1",cy-ty);l.setAttribute("x2",cx+tx);l.setAttribute("y2",cy+ty);l.setAttribute("stroke",m.color);l.setAttribute("stroke-width","2");l.setAttribute("vector-effect","non-scaling-stroke");return l;}\n'
+    + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
+    + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
+    + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
+    + '    var lbl=document.createElement("div");lbl.className="ann-label";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";\n'
+    + '    lbl.textContent=Math.round(Math.sqrt(dx*dx+dy*dy))+"px"+(m.note?" \\u00b7 "+m.note:"");\n'
+    + '    document.getElementById("c").appendChild(lbl);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function drawCallouts(){\n'
+    + '  annData.callouts.forEach(function(cc){\n'
+    + '    var x1=pctToPxImg(cc.x1,"w"),y1=pctToPxImg(cc.y1,"h"),x2=pctToPxImg(cc.x2,"w"),y2=pctToPxImg(cc.y2,"h");\n'
+    + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",cc.color);line.setAttribute("stroke-width","2.5");line.setAttribute("vector-effect","non-scaling-stroke");annSvg.appendChild(line);\n'
+    + '    var ang=Math.atan2(y2-y1,x2-x1),headLen=12;\n'
+    + '    var p1x=x2-headLen*Math.cos(ang-Math.PI/7),p1y=y2-headLen*Math.sin(ang-Math.PI/7);\n'
+    + '    var p2x=x2-headLen*Math.cos(ang+Math.PI/7),p2y=y2-headLen*Math.sin(ang+Math.PI/7);\n'
+    + '    var poly=svgEl2("polygon");poly.setAttribute("points",x2+","+y2+" "+p1x+","+p1y+" "+p2x+","+p2y);poly.setAttribute("fill",cc.color);annSvg.appendChild(poly);\n'
+    + '    var lbl=document.createElement("div");lbl.className="callout-label";lbl.style.left=cc.x1+"%";lbl.style.top=cc.y1+"%";lbl.textContent=cc.text;\n'
+    + '    document.getElementById("c").appendChild(lbl);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function drawHighlights(){\n'
+    + '  annData.highlights.forEach(function(hh){\n'
+    + '    var div=document.createElement("div");div.className="highlight-zone";\n'
+    + '    div.style.left=hh.x+"%";div.style.top=hh.y+"%";div.style.width=hh.w+"%";div.style.height=hh.h+"%";\n'
+    + '    div.style.background=hexToRgbaExp(hh.color,hh.opacity);div.style.border="2px solid "+hh.color;div.style.borderRadius=hh.shape==="ellipse"?"50%":"6px";\n'
+    + '    if(hh.text){var l=document.createElement("div");l.className="highlight-zone-label";l.textContent=hh.text;l.style.background=hh.color;div.appendChild(l);}\n'
+    + '    document.getElementById("c").appendChild(div);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function redrawAnn(){\n'
+    + '  annSvg.innerHTML="";\n'
+    + '  Array.prototype.slice.call(document.querySelectorAll(".ann-label,.callout-label,.highlight-zone")).forEach(function(e){e.remove();});\n'
+    + '  if(!mainImg.clientWidth)return;\n'
+    + '  annSvg.setAttribute("viewBox","0 0 "+mainImg.clientWidth+" "+mainImg.clientHeight);\n'
+    + '  drawMeasurements(); drawCallouts(); drawHighlights();\n'
+    + '}\n'
+    + 'if(mainImg.complete&&mainImg.naturalWidth)redrawAnn();else mainImg.onload=redrawAnn;\n'
+    + 'window.addEventListener("resize",redrawAnn);\n'
     + '})();';
 
   return '<!DOCTYPE html>\n'
@@ -1149,6 +1853,7 @@ function generateEmbedCode() {
   var sh1  = hexToRgba(color, 0.5);
   var sh2  = hexToRgba(color, 0.8);
   var data = hsDataForExport();
+  var annData = annotationsDataForExport();
   var p = uid + '-';
 
   var animCSS;
@@ -1185,13 +1890,20 @@ function generateEmbedCode() {
     + '.' + p + 'apl{width:28px;height:28px;background:' + color + ';border-radius:50%;border:none;color:#fff;cursor:pointer;font-size:10px;flex-shrink:0}\n'
     + '.' + p + 'anm{font-size:12px;color:#555}\n'
     + '.' + p + 'bh{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:system-ui,sans-serif}\n'
-    + '.' + p + 'bh:hover{opacity:.85}';
+    + '.' + p + 'bh:hover{opacity:.85}\n'
+    + '.' + p + 'svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}\n'
+    + '.' + p + 'lbl{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:system-ui,sans-serif}\n'
+    + '.' + p + 'clbl{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
+    + '.' + p + 'hlz{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
+    + '.' + p + 'hlbl{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
 
   var js = ''
     + '(function(){\n'
     + 'var d=' + data + ',w=document.getElementById("' + uid + '"),openId=null;\n'
+    + 'var annData=' + annData + ';\n'
     + 'function bhUrl(id){return "https://www.bhphotovideo.com/c/product/"+id+"/na.html";}\n'
     + 'function clampTip(el,tip){\n'
+    + '  var pt=tip.style.transitionProperty;tip.style.transitionProperty="opacity";\n'
     + '  el.style.setProperty("--tt-dx","0px");el.classList.remove("tt-flip");\n'
     + '  var cRect=w.getBoundingClientRect();\n'
     + '  var tRect=tip.getBoundingClientRect();\n'
@@ -1200,6 +1912,7 @@ function generateEmbedCode() {
     + '  else if(tRect.right>cRect.right-pad) dx=(cRect.right-pad)-tRect.right;\n'
     + '  if(dx!==0) el.style.setProperty("--tt-dx",dx+"px");\n'
     + '  if(tRect.top<cRect.top+pad) el.classList.add("tt-flip");\n'
+    + '  tip.offsetWidth;tip.style.transitionProperty=pt;\n'
     + '}\n'
     + 'd.forEach(function(h,i){\n'
     + '  var el=document.createElement("div");\n'
@@ -1230,6 +1943,55 @@ function generateEmbedCode() {
     + '  w.appendChild(el);\n'
     + '});\n'
     + 'document.addEventListener("click",function(){w.querySelectorAll(".' + p + 'h").forEach(function(x){x.classList.remove("open");});openId=null;});\n'
+    + 'var svgNS2="http://www.w3.org/2000/svg";\n'
+    + 'function svgEl2(tag){return document.createElementNS(svgNS2,tag);}\n'
+    + 'var annSvg=svgEl2("svg");annSvg.setAttribute("class","' + p + 'svg");w.appendChild(annSvg);\n'
+    + 'var mainImg=w.querySelector("img");\n'
+    + 'function pctToPxImg(pct,dim){return dim==="w"?(pct/100*mainImg.clientWidth):(pct/100*mainImg.clientHeight);}\n'
+    + 'function hexToRgbaExp(hex,a){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return "rgba("+r+","+g+","+b+","+a+")";}\n'
+    + 'function drawMeasurements(){\n'
+    + '  annData.measurements.forEach(function(m){\n'
+    + '    var x1=pctToPxImg(m.x1,"w"),y1=pctToPxImg(m.y1,"h"),x2=pctToPxImg(m.x2,"w"),y2=pctToPxImg(m.y2,"h");\n'
+    + '    var ang=Math.atan2(y2-y1,x2-x1),tickLen=8;\n'
+    + '    function tick(cx,cy){var tx=Math.cos(ang+Math.PI/2)*tickLen,ty=Math.sin(ang+Math.PI/2)*tickLen;var l=svgEl2("line");l.setAttribute("x1",cx-tx);l.setAttribute("y1",cy-ty);l.setAttribute("x2",cx+tx);l.setAttribute("y2",cy+ty);l.setAttribute("stroke",m.color);l.setAttribute("stroke-width","2");l.setAttribute("vector-effect","non-scaling-stroke");return l;}\n'
+    + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
+    + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
+    + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
+    + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";\n'
+    + '    lbl.textContent=Math.round(Math.sqrt(dx*dx+dy*dy))+"px"+(m.note?" \\u00b7 "+m.note:"");\n'
+    + '    w.appendChild(lbl);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function drawCallouts(){\n'
+    + '  annData.callouts.forEach(function(cc){\n'
+    + '    var x1=pctToPxImg(cc.x1,"w"),y1=pctToPxImg(cc.y1,"h"),x2=pctToPxImg(cc.x2,"w"),y2=pctToPxImg(cc.y2,"h");\n'
+    + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",cc.color);line.setAttribute("stroke-width","2.5");line.setAttribute("vector-effect","non-scaling-stroke");annSvg.appendChild(line);\n'
+    + '    var ang=Math.atan2(y2-y1,x2-x1),headLen=12;\n'
+    + '    var p1x=x2-headLen*Math.cos(ang-Math.PI/7),p1y=y2-headLen*Math.sin(ang-Math.PI/7);\n'
+    + '    var p2x=x2-headLen*Math.cos(ang+Math.PI/7),p2y=y2-headLen*Math.sin(ang+Math.PI/7);\n'
+    + '    var poly=svgEl2("polygon");poly.setAttribute("points",x2+","+y2+" "+p1x+","+p1y+" "+p2x+","+p2y);poly.setAttribute("fill",cc.color);annSvg.appendChild(poly);\n'
+    + '    var lbl=document.createElement("div");lbl.className="' + p + 'clbl";lbl.style.left=cc.x1+"%";lbl.style.top=cc.y1+"%";lbl.textContent=cc.text;\n'
+    + '    w.appendChild(lbl);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function drawHighlights(){\n'
+    + '  annData.highlights.forEach(function(hh){\n'
+    + '    var div=document.createElement("div");div.className="' + p + 'hlz";\n'
+    + '    div.style.left=hh.x+"%";div.style.top=hh.y+"%";div.style.width=hh.w+"%";div.style.height=hh.h+"%";\n'
+    + '    div.style.background=hexToRgbaExp(hh.color,hh.opacity);div.style.border="2px solid "+hh.color;div.style.borderRadius=hh.shape==="ellipse"?"50%":"6px";\n'
+    + '    if(hh.text){var l=document.createElement("div");l.className="' + p + 'hlbl";l.textContent=hh.text;l.style.background=hh.color;div.appendChild(l);}\n'
+    + '    w.appendChild(div);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function redrawAnn(){\n'
+    + '  annSvg.innerHTML="";\n'
+    + '  Array.prototype.slice.call(w.querySelectorAll(".' + p + 'lbl,.' + p + 'clbl,.' + p + 'hlz")).forEach(function(e){e.remove();});\n'
+    + '  if(!mainImg.clientWidth)return;\n'
+    + '  annSvg.setAttribute("viewBox","0 0 "+mainImg.clientWidth+" "+mainImg.clientHeight);\n'
+    + '  drawMeasurements(); drawCallouts(); drawHighlights();\n'
+    + '}\n'
+    + 'if(mainImg.complete&&mainImg.naturalWidth)redrawAnn();else mainImg.onload=redrawAnn;\n'
+    + 'window.addEventListener("resize",redrawAnn);\n'
     + '})();';
 
   return '<!-- Hotspot Embed: paste inside body -->\n'
@@ -1345,20 +2107,40 @@ function generateClaudeCodeExport() {
   var hasMedia = parsed.some(function(h) { return h.media; });
   var hasBH = parsed.some(function(h) { return h.bhId; });
 
-  var prompt = '# Hotspot Image Project — Claude Code Transfer\n\n'
-    + 'I built an interactive hotspot image in Hotspot Builder and want you to implement it as a production-ready project.\n\n'
+  var measurementSummary = measurements.map(function(m, i) {
+    var dx = (m.x2 - m.x1) / 100 * (document.getElementById('canvas-img').naturalWidth || 1);
+    var dy = (m.y2 - m.y1) / 100 * (document.getElementById('canvas-img').naturalHeight || 1);
+    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), note: m.note || '' };
+  });
+  var calloutSummary = callouts.map(function(c, i) {
+    return { index: i + 1, from: { x: c.x1, y: c.y1 }, to: { x: c.x2, y: c.y2 }, color: c.color, text: c.text };
+  });
+  var highlightSummary = highlights.map(function(h, i) {
+    return { index: i + 1, x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' };
+  });
+  var annJSON = annotationsDataForExport();
+  var hasAnyExtra = measurements.length || callouts.length || highlights.length;
+
+  var prompt = '# Annotated Image Project — Claude Code Transfer\n\n'
+    + 'I built an annotated image in Hotspot Builder (hotspots, measurements, callouts, and highlight zones) and want you to implement it as a production-ready project.\n\n'
     + '## Project Data\n\n'
     + '### Background Image\n'
     + 'The background image is embedded as a base64 data URL. '
     + (backgroundDataURL ? 'It is a ' + (backgroundDataURL.split(';')[0].split(':')[1] || 'image') + ' file.' : 'No image loaded.') + '\n\n'
-    + '```\nIMAGE_DATA_URL = "' + (backgroundDataURL ? backgroundDataURL.substring(0, 80) + '...[truncated, full data in hotspot-data.json]' : 'none') + '"\n```\n\n'
+    + '```\nIMAGE_DATA_URL = "' + (backgroundDataURL ? backgroundDataURL.substring(0, 80) + '...[truncated, full data in annotation-data.json]' : 'none') + '"\n```\n\n'
     + '### Hotspot Configuration\n\n'
     + '**Style settings:**\n'
     + '```json\n' + JSON.stringify(styleConfig, null, 2) + '\n```\n\n'
     + '**Hotspots (' + hotspots.length + ' total):**\n'
     + '```json\n' + JSON.stringify(hotspotSummary, null, 2) + '\n```\n\n'
+    + '**Measurements (' + measurements.length + ' total)** — pixel distances computed against the source image\'s natural resolution:\n'
+    + '```json\n' + JSON.stringify(measurementSummary, null, 2) + '\n```\n\n'
+    + '**Callouts (' + callouts.length + ' total)** — arrow + label pairs:\n'
+    + '```json\n' + JSON.stringify(calloutSummary, null, 2) + '\n```\n\n'
+    + '**Highlight zones (' + highlights.length + ' total)** — rectangle/ellipse overlays:\n'
+    + '```json\n' + JSON.stringify(highlightSummary, null, 2) + '\n```\n\n'
     + '## What to Build\n\n'
-    + 'Create a self-contained interactive hotspot image component with these requirements:\n\n'
+    + 'Create a self-contained annotated-image component with these requirements:\n\n'
     + '### Core Features\n'
     + '- Display the background image full-width, responsive\n'
     + '- Place numbered circular pins at the exact percentage positions above\n'
@@ -1366,18 +2148,19 @@ function generateClaudeCodeExport() {
     + (hsAnimation !== 'none' ? ', duration: ' + (1/hsPulseSpeed*2).toFixed(2) + 's' : '') + '\n'
     + '- On **hover (desktop)** and **tap (mobile)**: show a tooltip card above the pin\n'
     + '- Tooltip contains: title, description text, and any media\n'
-    + '- Clicking/tapping outside closes open tooltips\n\n'
+    + '- Clicking/tapping outside closes open tooltips\n'
+    + (hasAnyExtra ? '- Render measurements/callouts/highlights as always-visible overlays (not hover-triggered like hotspot tooltips) — they are static markup, not interactive elements\n' : '') + '\n'
     + '### Tooltip Content Per Hotspot\n'
-    + hotspotSummary.map(function(h) {
+    + (hotspotSummary.length ? hotspotSummary.map(function(h) {
         var lines = ['**Hotspot ' + h.index + ': ' + h.title + '**'];
         if (h.text) lines.push('- Description: "' + h.text + '"');
         if (h.hasImage) lines.push('- Contains an image (' + h.mediaName + ')');
         if (h.hasAudio) lines.push('- Contains audio (' + h.mediaName + ')');
         if (h.bhId) lines.push('- B&H product link: https://www.bhphotovideo.com/c/product/' + h.bhId + '/na.html');
         return lines.join('\n');
-      }).join('\n\n') + '\n\n'
+      }).join('\n\n') : '_(none)_') + '\n\n'
     + (hasBH ? '### B&H Product Links\nHotspots with a B&H Product ID should show a "See Details" button that opens:\n`https://www.bhphotovideo.com/c/product/{PRODUCT_ID}/na.html`\n\n' : '')
-    + '### Animation Spec\n'
+    + '### Animation Spec (Hotspots)\n'
     + (hsAnimation === 'pulse'
         ? 'Pulse ring: `::after` pseudo-element, scale from 0.8 to 1.6, opacity 1 to 0, duration ' + (1/hsPulseSpeed*2).toFixed(2) + 's, ease-out, infinite.\n\n'
       : hsAnimation === 'ripple'
@@ -1385,35 +2168,43 @@ function generateClaudeCodeExport() {
       : hsAnimation === 'bounce'
         ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
       : 'No animation on pins.\n\n')
+    + '### Measurements\n'
+    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating label at the midpoint showing `distancePx` (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size) and the optional `note`. Render as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
+    + '### Callouts\n'
+    + 'Each callout is an arrow from `from` to `to` (SVG line + a small triangular arrowhead polygon at `to`, rotated to the line\'s angle) plus a label bubble with `text`, positioned near the `from` point. Same SVG-overlay approach as measurements.\n\n'
+    + '### Highlight Zones\n'
+    + 'Each highlight zone is a rectangle (`x,y,w,h` as percentages of the image) with a semi-transparent fill (`color` at `opacity`) and a solid border in `color`. When `shape` is `"ellipse"`, render with `border-radius:50%` (or an SVG ellipse) instead of a rectangle. If `text` is set, show it as a small label chip in the top-left corner of the zone.\n\n'
     + '### Suggested File Structure\n'
-    + '```\nhotspot-project/\n'
-    + '  index.html          ← main entry point\n'
-    + '  hotspot-data.json   ← all hotspot data including full image base64\n'
-    + '  hotspot.css         ← styles and animations\n'
-    + '  hotspot.js          ← logic: render, tooltip toggle, mobile tap\n'
-    + '  README.md           ← usage instructions\n'
+    + '```\nannotated-image-project/\n'
+    + '  index.html             ← main entry point\n'
+    + '  annotation-data.json   ← all annotation data including full image base64\n'
+    + '  annotation.css         ← styles and animations\n'
+    + '  annotation.js          ← logic: render, tooltip toggle, mobile tap, resize handling\n'
+    + '  README.md              ← usage instructions\n'
     + '```\n\n'
-    + '### hotspot-data.json contents\n'
+    + '### annotation-data.json contents\n'
     + 'This file should contain the complete data:\n'
     + '```json\n'
     + '{\n'
     + '  "backgroundImage": "<FULL_BASE64_DATA_URL>",\n'
     + '  "style": ' + JSON.stringify(styleConfig) + ',\n'
-    + '  "hotspots": ' + data + '\n'
+    + '  "hotspots": ' + data + ',\n'
+    + '  "annotations": ' + annJSON + '\n'
     + '}\n'
     + '```\n\n'
     + '### Implementation Notes\n'
-    + '- Use `position: absolute` with `left` and `top` percentages for pin placement\n'
+    + '- Use `position: absolute` with `left` and `top` percentages for hotspot pin placement, and for the highlight-zone boxes\n'
     + '- Container must be `position: relative` with `display: inline-block` or `position: relative; width: 100%`\n'
     + '- Tooltip positioning: `bottom: calc(100% + 14px)`, centered with `translateX(-50%)`\n'
-    + '- On mobile (≤768px): use tap to toggle tooltip, not hover\n'
-    + '- Prevent tooltip from clipping at image edges (flip to bottom if near top)\n'
-    + (hasMedia ? '- Media (images/audio) are embedded as base64 in hotspot-data.json\n' : '')
+    + '- On touch devices (phone or tablet): use tap to toggle tooltip, not hover — detect via `(hover: none) and (pointer: coarse)` or feature-detect touch, not just viewport width\n'
+    + '- Prevent tooltip from clipping at image edges (flip to bottom if near top, shift horizontally if near left/right)\n'
+    + (hasMedia ? '- Media (images/audio) are embedded as base64 in annotation-data.json\n' : '')
+    + (hasAnyExtra ? '- Measurement/callout SVG overlay coordinates must be recomputed in real pixel space (not raw percentages) so line angles and arrowheads aren\'t distorted on non-square images — convert stored percentages to the image\'s current rendered width/height on each render and on window resize\n' : '')
     + '\n### Preferred Framework\n'
     + 'Implement as: **vanilla HTML/CSS/JS** (no build step required). '
     + 'If I ask for a specific framework (React, Vue, etc.), adapt accordingly.\n\n'
     + '---\n'
-    + '_Generated by Hotspot Builder. ' + hotspots.length + ' hotspot(s), style: ' + hsColor + ' / ' + hsAnimation + '_';
+    + '_Generated by Hotspot Builder. ' + hotspots.length + ' hotspot(s), ' + measurements.length + ' measurement(s), ' + callouts.length + ' callout(s), ' + highlights.length + ' highlight(s)._';
 
   return prompt;
 }
@@ -1427,6 +2218,77 @@ function drawHotspotsOnCanvas(canvas, img) {
   canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
   ctx.drawImage(img, 0, 0);
   var scaleX = img.naturalWidth / 100, scaleY = img.naturalHeight / 100;
+
+  highlights.forEach(function(h) {
+    var x = h.x * scaleX, y = h.y * scaleY, w = h.w * scaleX, hgt = h.h * scaleY;
+    ctx.save();
+    ctx.fillStyle = hexToRgbaStr(h.color, h.opacity);
+    ctx.strokeStyle = h.color; ctx.lineWidth = Math.max(2, img.naturalWidth * 0.002);
+    if (h.shape === 'ellipse') {
+      ctx.beginPath();
+      ctx.ellipse(x + w / 2, y + hgt / 2, Math.abs(w / 2), Math.abs(hgt / 2), 0, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.rect(x, y, w, hgt); ctx.fill(); ctx.stroke();
+    }
+    if (h.text) {
+      var fs = Math.max(12, img.naturalWidth * 0.014);
+      ctx.font = '700 ' + fs + 'px system-ui,sans-serif';
+      var tw = ctx.measureText(h.text).width;
+      ctx.fillStyle = h.color;
+      ctx.fillRect(x + 6, y + 6, tw + 16, fs + 10);
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(h.text, x + 14, y + 6 + (fs + 10) / 2);
+    }
+    ctx.restore();
+  });
+
+  measurements.forEach(function(m) {
+    var x1 = m.x1 * scaleX, y1 = m.y1 * scaleY, x2 = m.x2 * scaleX, y2 = m.y2 * scaleY;
+    var ang = Math.atan2(y2 - y1, x2 - x1);
+    var tickLen = Math.max(6, img.naturalWidth * 0.008);
+    ctx.save();
+    ctx.strokeStyle = m.color; ctx.lineWidth = Math.max(2, img.naturalWidth * 0.0018);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    [[x1, y1], [x2, y2]].forEach(function(pt) {
+      var tx = Math.cos(ang + Math.PI / 2) * tickLen, ty = Math.sin(ang + Math.PI / 2) * tickLen;
+      ctx.beginPath(); ctx.moveTo(pt[0] - tx, pt[1] - ty); ctx.lineTo(pt[0] + tx, pt[1] + ty); ctx.stroke();
+    });
+    var dx = (m.x2 - m.x1) / 100 * img.naturalWidth, dy = (m.y2 - m.y1) / 100 * img.naturalHeight;
+    var label = Math.round(Math.sqrt(dx * dx + dy * dy)) + 'px' + (m.note ? ' · ' + m.note : '');
+    var fs = Math.max(12, img.naturalWidth * 0.013);
+    ctx.font = '600 ' + fs + 'px system-ui,sans-serif';
+    var tw = ctx.measureText(label).width;
+    var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(mx - tw / 2 - 8, my - fs / 2 - 6, tw + 16, fs + 12);
+    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, mx, my + 1);
+    ctx.restore();
+  });
+
+  callouts.forEach(function(c) {
+    var x1 = c.x1 * scaleX, y1 = c.y1 * scaleY, x2 = c.x2 * scaleX, y2 = c.y2 * scaleY;
+    ctx.save();
+    ctx.strokeStyle = c.color; ctx.lineWidth = Math.max(2, img.naturalWidth * 0.0022);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    var ang = Math.atan2(y2 - y1, x2 - x1);
+    var headLen = Math.max(10, img.naturalWidth * 0.014);
+    var p1x = x2 - headLen * Math.cos(ang - Math.PI / 7), p1y = y2 - headLen * Math.sin(ang - Math.PI / 7);
+    var p2x = x2 - headLen * Math.cos(ang + Math.PI / 7), p2y = y2 - headLen * Math.sin(ang + Math.PI / 7);
+    ctx.fillStyle = c.color;
+    ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(p1x, p1y); ctx.lineTo(p2x, p2y); ctx.closePath(); ctx.fill();
+    var fs = Math.max(12, img.naturalWidth * 0.014);
+    ctx.font = '700 ' + fs + 'px system-ui,sans-serif';
+    var tw = ctx.measureText(c.text).width;
+    var boxY = y1 - fs - 20;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(x1 - tw / 2 - 10, boxY, tw + 20, fs + 12);
+    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(c.text, x1, boxY + (fs + 12) / 2);
+    ctx.restore();
+  });
+
   var pinR = Math.max(16, Math.min(32, img.naturalWidth * 0.025));
   var fontSize = Math.round(pinR * 0.72);
   hotspots.forEach(function(hs, i) {
@@ -1476,9 +2338,10 @@ function checkViewport() {
     document.getElementById('toolbar-hint').style.display = 'none';
   }
   document.querySelectorAll('.hotspot.tapped').forEach(function(h) { clampTooltip(h); });
+  redrawAllAnnotations();
   renderMobileList();
   var mExport = document.getElementById('mnav-export');
-  if (mExport) mExport.disabled = hotspots.length === 0 || !backgroundDataURL;
+  if (mExport) mExport.disabled = (hotspots.length + measurements.length + callouts.length + highlights.length) === 0 || !backgroundDataURL;
 }
 window.addEventListener('resize', checkViewport);
 checkViewport();
@@ -1505,7 +2368,7 @@ document.addEventListener('click', function(e) {
 // Long press on mobile canvas to add hotspot (instead of click in add mode)
 var longPressTimer = null;
 document.getElementById('image-canvas').addEventListener('touchstart', function(e) {
-  if (!isMobile || e.target.closest('.hotspot')) return;
+  if (!isMobile || tool !== 'hotspot' || previewMode || e.target.closest('.hotspot')) return;
   var touch = e.touches[0];
   longPressTimer = setTimeout(function() {
     var img = document.getElementById('canvas-img');
@@ -1585,25 +2448,16 @@ function renderMobileList() {
   if (!isMobile) return;
   var list = document.getElementById('mobile-hotspot-list');
   if (!list) return;
-  if (hotspots.length === 0) {
-    list.innerHTML = '<div class="empty-state" style="padding:1.5rem 0;"><div class="empty-icon">&#9711;</div><div class="empty-title">No hotspots yet</div><div class="empty-text">Long-press anywhere on your image to add a hotspot.</div></div>';
-    return;
-  }
-  list.innerHTML = '';
-  hotspots.forEach(function(hs, i) {
-    var card = document.createElement('div');
-    card.className = 'hotspot-card';
-    card.style.cssText = 'padding:12px 14px;margin-bottom:10px;';
-    card.innerHTML = buildHotspotCardHTML(hs, i, true);
-    list.appendChild(card);
-  });
+  var html = annotationCardsHTML(true);
+  var total = hotspots.length + measurements.length + callouts.length + highlights.length;
+  list.innerHTML = html !== null ? html : '<div class="empty-state" style="padding:1.5rem 0;"><div class="empty-icon">&#9711;</div><div class="empty-title">No annotations yet</div><div class="empty-text">Pick a tool, then tap or drag on your image to add one.</div></div>';
   // Update mobile stats
-  document.getElementById('m-stat-total').textContent = hotspots.length;
-  document.getElementById('m-stat-media').textContent = hotspots.filter(hasMedia).length;
-  document.getElementById('m-stat-desc').textContent = hotspots.filter(hasText).length;
-  document.getElementById('m-stat-links').textContent = hotspots.filter(hasLink).length;
+  document.getElementById('m-stat-hotspots').textContent = hotspots.length;
+  document.getElementById('m-stat-measurements').textContent = measurements.length;
+  document.getElementById('m-stat-callouts').textContent = callouts.length;
+  document.getElementById('m-stat-highlights').textContent = highlights.length;
   // Update nav badge
-  document.getElementById('mnav-hotspots-label').textContent = hotspots.length > 0 ? 'Hotspots (' + hotspots.length + ')' : 'Hotspots';
+  document.getElementById('mnav-hotspots-label').textContent = total > 0 ? 'Items (' + total + ')' : 'Items';
 }
 
 // Patch renderList to also call renderMobileList
@@ -1618,7 +2472,7 @@ var _origUpdateCounter = updateCounter;
 updateCounter = function() {
   _origUpdateCounter();
   var mExport = document.getElementById('mnav-export');
-  if (mExport) mExport.disabled = hotspots.length === 0 || !backgroundDataURL;
+  if (mExport) mExport.disabled = (hotspots.length + measurements.length + callouts.length + highlights.length) === 0 || !backgroundDataURL;
   renderMobileList();
 };
 
@@ -1631,6 +2485,7 @@ document.getElementById('canvas-viewport').addEventListener('click', function(e)
     document.getElementById('main-img-input').click();
     return;
   }
+  if (tool !== 'hotspot' || previewMode) return;
   // Single tap to add on mobile
   var img = document.getElementById('canvas-img');
   var rect = img.getBoundingClientRect();
