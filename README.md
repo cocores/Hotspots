@@ -9,7 +9,7 @@ Everything runs entirely in the browser. There's no server, no dependencies, and
 Four annotation tools work together on the same image — pick one from the toolbar and click or drag on the canvas:
 
 - **📍 Hotspots** — click to pin a numbered marker to a UI region, with a title, optional description, optional image/GIF or audio clip, and an optional B&H product link. Drag existing pins to reposition them. Great for documenting interaction areas and flagging issues.
-- **📐 Measurements** — drag to draw a ruler-style line between two points. The distance label is computed from the source image's *natural* pixel dimensions (not the on-screen render size), so it stays accurate for spacing reviews and developer handoff regardless of zoom or display size.
+- **📐 Measurements** — drag to draw a ruler-style line between two points. The distance label is computed from the source image's *natural* pixel dimensions (not the on-screen render size), so it stays accurate for spacing reviews and developer handoff regardless of zoom or display size. Tag it with a dimension (Height/Width/Depth) and a variant (with stand/without stand) via quick-pick chips — they compose into a label like "Width (without stand)" — or type any custom label instead.
 - **✏️ Callouts** — drag to draw a labeled arrow pointing at something specific — fast markup without leaving the browser.
 - **🖼 Highlights** (infographics) — drag to draw a rectangle or ellipse zone with adjustable color/opacity and an optional label, for layering visual callouts over screenshots in stakeholder presentations and async walkthroughs.
 
