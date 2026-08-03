@@ -205,6 +205,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 .media-preview .audio-name{font-size:13px;color:var(--ink2)}
 .hidden-input{position:fixed;top:0;left:0;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0,0,0,0);opacity:0}
 .bh-field-row{display:flex;gap:8px;align-items:center}
+.ann-checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:0}
+.ann-checkbox-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent2);cursor:pointer}
 .bh-link-preview-box{display:none;margin-top:8px;font-size:12px;color:var(--ink3);background:var(--bg);border-radius:7px;padding:6px 10px;word-break:break-all}
 .export-code{background:#0b0b11;border-radius:var(--radius);padding:1rem;font-family:'SF Mono','Courier New',monospace;font-size:12px;color:#a8b2d8;overflow-x:auto;max-height:300px;overflow-y:auto;line-height:1.6;white-space:pre;border:1px solid rgba(255,255,255,.06)}
 .export-code::-webkit-scrollbar{width:6px;height:6px}
@@ -760,11 +762,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         </div>
       </div>
       <div class="form-group" id="ann-variant-group" style="display:none;">
-        <label>Variant <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
-        <div class="shape-toggle" id="ann-variant-toggle">
-          <button type="button" onclick="setAnnVariant('with stand')">With stand</button>
-          <button type="button" onclick="setAnnVariant('without stand')">Without stand</button>
-        </div>
+        <label class="ann-checkbox-row"><input type="checkbox" id="ann-with-stand" onchange="setAnnWithStand(this.checked)"> With stand</label>
       </div>
       <div class="form-group">
         <label for="ann-text" id="ann-text-label">Label <span style="color:var(--accent);">*</span></label>
@@ -1377,7 +1375,7 @@ var annModalContext = null;
 var pendingAnnotation = null;
 var editingMeasurementId = null;
 var pendingAnnDimension = '';
-var pendingAnnVariant = '';
+var pendingAnnWithStand = false;
 
 function setAnnShape(shape) {
   pendingHighlightShape = shape;
@@ -1388,7 +1386,7 @@ function setAnnShape(shape) {
 
 function composeAnnLabel() {
   var label = pendingAnnDimension;
-  if (pendingAnnVariant) label += (label ? ' (' + pendingAnnVariant + ')' : pendingAnnVariant);
+  if (pendingAnnWithStand) label = label ? label + ' with stand' : 'With stand';
   document.getElementById('ann-text').value = label;
 }
 function setAnnDimension(dim) {
@@ -1398,16 +1396,14 @@ function setAnnDimension(dim) {
   });
   composeAnnLabel();
 }
-function setAnnVariant(variant) {
-  pendingAnnVariant = (pendingAnnVariant === variant) ? '' : variant;
-  document.querySelectorAll('#ann-variant-toggle button').forEach(function(b) {
-    b.classList.toggle('active', b.textContent.trim().toLowerCase() === pendingAnnVariant);
-  });
+function setAnnWithStand(checked) {
+  pendingAnnWithStand = checked;
   composeAnnLabel();
 }
 function resetAnnDimensionPickers() {
-  pendingAnnDimension = ''; pendingAnnVariant = '';
-  document.querySelectorAll('#ann-dim-toggle button, #ann-variant-toggle button').forEach(function(b) { b.classList.remove('active'); });
+  pendingAnnDimension = ''; pendingAnnWithStand = false;
+  document.querySelectorAll('#ann-dim-toggle button').forEach(function(b) { b.classList.remove('active'); });
+  var cb = document.getElementById('ann-with-stand'); if (cb) cb.checked = false;
 }
 
 function openMeasurementModal(x1, y1, x2, y2) {
@@ -1420,7 +1416,7 @@ function openMeasurementModal(x1, y1, x2, y2) {
   document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
   document.getElementById('ann-text').value = '';
   document.getElementById('ann-text').style.borderColor = '';
-  document.getElementById('ann-text').placeholder = 'e.g. Height, Width (without stand)...';
+  document.getElementById('ann-text').placeholder = 'e.g. Height, Width with stand...';
   document.getElementById('ann-shape-group').style.display = 'none';
   document.getElementById('ann-dim-group').style.display = 'block';
   document.getElementById('ann-variant-group').style.display = 'block';
@@ -1467,12 +1463,25 @@ function openMeasurementEditModal(id) {
   annModalContext = 'measurement-edit';
   editingMeasurementId = id;
   resetAnnDimensionPickers();
+  // Best-effort: pre-select the checkbox/chip if the stored label matches what they'd produce
+  var rest = m.label || '';
+  if (/\s*with stand$/i.test(rest)) {
+    pendingAnnWithStand = true;
+    document.getElementById('ann-with-stand').checked = true;
+    rest = rest.replace(/\s*with stand$/i, '');
+  }
+  if (rest === 'Height' || rest === 'Width' || rest === 'Depth') {
+    pendingAnnDimension = rest;
+    document.querySelectorAll('#ann-dim-toggle button').forEach(function(b) {
+      b.classList.toggle('active', b.textContent.trim() === rest);
+    });
+  }
   document.getElementById('ann-modal-title').textContent = 'Edit Measurement';
   document.getElementById('ann-modal-sub').textContent = measureDistancePx(m) + 'px';
   document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
   document.getElementById('ann-text').value = m.label || '';
   document.getElementById('ann-text').style.borderColor = '';
-  document.getElementById('ann-text').placeholder = 'e.g. Height, Width (without stand)...';
+  document.getElementById('ann-text').placeholder = 'e.g. Height, Width with stand...';
   document.getElementById('ann-shape-group').style.display = 'none';
   document.getElementById('ann-dim-group').style.display = 'block';
   document.getElementById('ann-variant-group').style.display = 'block';
