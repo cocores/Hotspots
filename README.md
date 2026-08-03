@@ -17,7 +17,8 @@ All four types coexist on one image, each with its own color (and, for highlight
 
 - **Upload an image** by dragging it in or tapping to browse (JPEG, PNG, WebP, GIF).
 - **Smart tooltips**: hotspot tooltips automatically reposition and flip so they never spill past the edges of the image.
-- **Preview mode**: toggle to a read-only view with hover/tap-triggered hotspot tooltips and no editing.
+- **Header badge**: the header shows the currently selected tool (Hotspot/Measure/Callout/Highlight), updating live as you switch tools.
+- **Preview mode**: toggle to a read-only view with hover/tap-triggered hotspot tooltips and no editing. It's hard to miss — the header badge switches to a glowing, pulsing "Preview Mode" pill, the toolbar tints blue, and the canvas gets a blue ring around it, so you always know when you're looking at the read-only view versus editing.
 - **Export options**:
   - **HTML file** — a self-contained standalone page with everything embedded.
   - **Embed code** — a drop-in snippet you can paste into any existing page.
