@@ -138,6 +138,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .ann-label .ml-tag{font-size:10px;font-weight:500;color:var(--ink3)}
 .ann-label .ml-num{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
 .ann-label .ml-unit{font-size:9px;font-weight:700;letter-spacing:.04em;color:#fff;padding:2px 6px;border-radius:5px;line-height:1.5}
+.ann-label.ann-label-vertical{transform:translate(-50%,-50%) rotate(-90deg)}
 .callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:var(--ink);font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:'DM Sans',sans-serif}
 .highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}
 .highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}
@@ -796,6 +797,13 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <button type="button" onclick="setAnnUnit('cm')">Centimeter (CM)</button>
         </div>
       </div>
+      <div class="form-group" id="ann-direction-group" style="display:none;">
+        <label>Text direction</label>
+        <div class="shape-toggle" id="ann-direction-toggle">
+          <button type="button" class="active" onclick="setAnnDirection('horizontal')">Horizontal</button>
+          <button type="button" onclick="setAnnDirection('vertical')">Vertical</button>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeAnnotationModal()">Cancel</button>
@@ -1286,7 +1294,7 @@ function createMeasurementEl(m) {
   svg.appendChild(g);
 
   var label = document.createElement('div');
-  label.className = 'ann-label'; label.id = 'ml-' + m.id;
+  label.className = 'ann-label' + (m.direction === 'vertical' ? ' ann-label-vertical' : ''); label.id = 'ml-' + m.id;
   label.style.left = ((m.x1 + m.x2) / 2) + '%'; label.style.top = ((m.y1 + m.y2) / 2) + '%';
   label.style.borderLeftColor = m.color;
   label.innerHTML = buildMeasureLabelHTML(m);
@@ -1458,6 +1466,7 @@ var editingMeasurementId = null;
 var pendingAnnDimension = '';
 var pendingAnnWithStand = false;
 var pendingAnnUnit = '';
+var pendingAnnDirection = 'horizontal';
 
 function setAnnShape(shape) {
   pendingHighlightShape = shape;
@@ -1483,9 +1492,10 @@ function setAnnWithStand(checked) {
   composeAnnLabel();
 }
 function resetAnnDimensionPickers() {
-  pendingAnnDimension = ''; pendingAnnWithStand = false; pendingAnnUnit = '';
+  pendingAnnDimension = ''; pendingAnnWithStand = false; pendingAnnUnit = ''; pendingAnnDirection = 'horizontal';
   document.querySelectorAll('#ann-dim-toggle button').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('#ann-unit-toggle button').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('#ann-direction-toggle button').forEach(function(b, i) { b.classList.toggle('active', i === 0); });
   var cb = document.getElementById('ann-with-stand'); if (cb) cb.checked = false;
 }
 
@@ -1493,6 +1503,13 @@ function setAnnUnit(unit) {
   pendingAnnUnit = (pendingAnnUnit === unit) ? '' : unit;
   document.querySelectorAll('#ann-unit-toggle button').forEach(function(b, i) {
     b.classList.toggle('active', (i === 0 ? 'in' : 'cm') === pendingAnnUnit);
+  });
+}
+
+function setAnnDirection(dir) {
+  pendingAnnDirection = dir;
+  document.querySelectorAll('#ann-direction-toggle button').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 ? 'horizontal' : 'vertical') === dir);
   });
 }
 
@@ -1519,6 +1536,7 @@ function openMeasurementModal(x1, y1, x2, y2) {
   document.getElementById('ann-dim-group').style.display = 'block';
   document.getElementById('ann-variant-group').style.display = 'block';
   document.getElementById('ann-value-group').style.display = 'block';
+  document.getElementById('ann-direction-group').style.display = 'block';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1536,6 +1554,7 @@ function openCalloutModal(x1, y1, x2, y2) {
   document.getElementById('ann-dim-group').style.display = 'none';
   document.getElementById('ann-variant-group').style.display = 'none';
   document.getElementById('ann-value-group').style.display = 'none';
+  document.getElementById('ann-direction-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1554,6 +1573,7 @@ function openHighlightModal(x, y, w, h) {
   document.getElementById('ann-dim-group').style.display = 'none';
   document.getElementById('ann-variant-group').style.display = 'none';
   document.getElementById('ann-value-group').style.display = 'none';
+  document.getElementById('ann-direction-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1583,6 +1603,10 @@ function openMeasurementEditModal(id) {
       b.classList.toggle('active', (i === 0 ? 'in' : 'cm') === m.unit);
     });
   }
+  pendingAnnDirection = (m.direction === 'vertical') ? 'vertical' : 'horizontal';
+  document.querySelectorAll('#ann-direction-toggle button').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 ? 'horizontal' : 'vertical') === pendingAnnDirection);
+  });
   document.getElementById('ann-modal-title').textContent = 'Edit Measurement';
   document.getElementById('ann-modal-sub').textContent = 'Drawn line: ' + measureDistancePx(m) + 'px';
   document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
@@ -1594,6 +1618,7 @@ function openMeasurementEditModal(id) {
   document.getElementById('ann-dim-group').style.display = 'block';
   document.getElementById('ann-variant-group').style.display = 'block';
   document.getElementById('ann-value-group').style.display = 'block';
+  document.getElementById('ann-direction-group').style.display = 'block';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1608,7 +1633,7 @@ function saveAnnotationModal() {
   var text = document.getElementById('ann-text').value.trim();
   if (annModalContext === 'measurement') {
     var value = document.getElementById('ann-value').value.trim();
-    var m = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, color: measureColor, label: text, value: value, unit: value ? pendingAnnUnit : '' };
+    var m = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, color: measureColor, label: text, value: value, unit: value ? pendingAnnUnit : '', direction: pendingAnnDirection };
     measurements.push(m); createMeasurementEl(m);
   } else if (annModalContext === 'callout') {
     if (!text) { document.getElementById('ann-text').style.borderColor = '#ff4d2e'; document.getElementById('ann-text').focus(); return; }
@@ -1623,8 +1648,9 @@ function saveAnnotationModal() {
       em.label = text;
       em.value = document.getElementById('ann-value').value.trim();
       em.unit = em.value ? pendingAnnUnit : '';
+      em.direction = pendingAnnDirection;
       var lbl = document.getElementById('ml-' + em.id);
-      if (lbl) lbl.innerHTML = buildMeasureLabelHTML(em);
+      if (lbl) { lbl.innerHTML = buildMeasureLabelHTML(em); lbl.classList.toggle('ann-label-vertical', em.direction === 'vertical'); }
     }
   }
   closeAnnotationModal();
@@ -1870,7 +1896,7 @@ function hsDataForExport() {
 
 function annotationsDataForExport() {
   return JSON.stringify({
-    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '', value: m.value || '', unit: m.unit || '' }; }),
+    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '', value: m.value || '', unit: m.unit || '', direction: m.direction === 'vertical' ? 'vertical' : 'horizontal' }; }),
     callouts: callouts.map(function(c) { return { x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2, color: c.color, text: c.text }; }),
     highlights: highlights.map(function(h) { return { x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' }; })
   });
@@ -1926,6 +1952,7 @@ function generateExportHTML() {
     + '.ann-label .ml-tag{font-size:10px;font-weight:500;color:#8a8a92}\n'
     + '.ann-label .ml-num{font-size:13px;font-weight:700;color:#111;letter-spacing:-.2px}\n'
     + '.ann-label .ml-unit{font-size:9px;font-weight:700;letter-spacing:.04em;color:#fff;padding:2px 6px;border-radius:5px;line-height:1.5}\n'
+    + '.ann-label.ann-label-vertical{transform:translate(-50%,-50%) rotate(-90deg)}\n'
     + '.callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
     + '.highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
     + '.highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
@@ -1993,7 +2020,7 @@ function generateExportHTML() {
     + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
     + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
-    + '    var lbl=document.createElement("div");lbl.className="ann-label";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
+    + '    var lbl=document.createElement("div");lbl.className="ann-label"+(m.direction==="vertical"?" ann-label-vertical":"");lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
     + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
     + '    if(m.label){var mlt=document.createElement("span");mlt.className="ml-tag";mlt.textContent=m.label;lbl.appendChild(mlt);}\n'
     + '    var mln=document.createElement("span");mln.className="ml-num";mln.textContent=hasVal?m.value:Math.round(Math.sqrt(dx*dx+dy*dy));lbl.appendChild(mln);\n'
@@ -2097,6 +2124,7 @@ function generateEmbedCode() {
     + '.' + p + 'lbl .' + p + 'mlt{font-size:10px;font-weight:500;color:#8a8a92}\n'
     + '.' + p + 'lbl .' + p + 'mln{font-size:13px;font-weight:700;color:#111;letter-spacing:-.2px}\n'
     + '.' + p + 'lbl .' + p + 'mlu{font-size:9px;font-weight:700;letter-spacing:.04em;color:#fff;padding:2px 6px;border-radius:5px;line-height:1.5}\n'
+    + '.' + p + 'lbl.' + p + 'lblv{transform:translate(-50%,-50%) rotate(-90deg)}\n'
     + '.' + p + 'clbl{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
     + '.' + p + 'hlz{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
     + '.' + p + 'hlbl{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
@@ -2161,7 +2189,7 @@ function generateEmbedCode() {
     + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
     + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
-    + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
+    + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl"+(m.direction==="vertical"?" ' + p + 'lblv":"");lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
     + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
     + '    if(m.label){var mlt=document.createElement("span");mlt.className="' + p + 'mlt";mlt.textContent=m.label;lbl.appendChild(mlt);}\n'
     + '    var mln=document.createElement("span");mln.className="' + p + 'mln";mln.textContent=hasVal?m.value:Math.round(Math.sqrt(dx*dx+dy*dy));lbl.appendChild(mln);\n'
@@ -2336,7 +2364,7 @@ function generateClaudeCodeExport() {
   var measurementSummary = measurements.map(function(m, i) {
     var dx = (m.x2 - m.x1) / 100 * (document.getElementById('canvas-img').naturalWidth || 1);
     var dy = (m.y2 - m.y1) / 100 * (document.getElementById('canvas-img').naturalHeight || 1);
-    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), label: m.label || '', value: m.value || '', unit: m.unit || '' };
+    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), label: m.label || '', value: m.value || '', unit: m.unit || '', direction: m.direction === 'vertical' ? 'vertical' : 'horizontal' };
   });
   var calloutSummary = callouts.map(function(c, i) {
     return { index: i + 1, from: { x: c.x1, y: c.y1 }, to: { x: c.x2, y: c.y2 }, color: c.color, text: c.text };
@@ -2395,7 +2423,7 @@ function generateClaudeCodeExport() {
         ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
       : 'No animation on pins.\n\n')
     + '### Measurements\n'
-    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating chip label at the midpoint. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"` or `"cm"` — a small colored pill badge with "IN" or "CM" (colored using the measurement\'s own `color`). If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. Render the line/ticks as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
+    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating chip label at the midpoint. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"` or `"cm"` — a small colored pill badge with "IN" or "CM" (colored using the measurement\'s own `color`). If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. If `direction` is `"vertical"`, rotate the whole chip -90 degrees around its own center (so the text reads bottom-to-top) — CSS: `transform: translate(-50%,-50%) rotate(-90deg)` in place of the default `translate(-50%,-50%)`; the ruler line itself is never rotated, only the chip. Render the line/ticks as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
     + '### Callouts\n'
     + 'Each callout is an arrow from `from` to `to` (SVG line + a small triangular arrowhead polygon at `to`, rotated to the line\'s angle) plus a label bubble with `text`, positioned near the `from` point. Same SVG-overlay approach as measurements.\n\n'
     + '### Highlight Zones\n'
@@ -2514,6 +2542,9 @@ function drawHotspotsOnCanvas(canvas, img) {
     var boxX = mx - boxW / 2, boxY = my - boxH / 2;
 
     ctx.save();
+    if (m.direction === 'vertical') { ctx.translate(mx, my); ctx.rotate(-Math.PI / 2); ctx.translate(-mx, -my); }
+
+    ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
     roundRectPath(ctx, boxX, boxY, boxW, boxH, 9);
     ctx.fillStyle = '#fff'; ctx.fill();
@@ -2547,6 +2578,7 @@ function drawHotspotsOnCanvas(canvas, img) {
       ctx.fillStyle = '#fff';
       ctx.fillText(unitText, cx + unitPadX, cy);
     }
+    ctx.restore();
     ctx.restore();
   });
 
