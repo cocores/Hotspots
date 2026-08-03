@@ -806,7 +806,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         </button>
         <button class="export-tab" id="tab-webp" onclick="switchExportTab('webp')">
           <span class="export-tab-icon">&#128444;</span>
-          <div><div class="export-tab-title">WebP Image</div><div class="export-tab-desc">Flat image with pins</div></div>
+          <div><div class="export-tab-title">Image</div><div class="export-tab-desc">Flat image with pins</div></div>
         </button>
         <button class="export-tab" id="tab-claude" onclick="switchExportTab('claude')">
           <span class="export-tab-icon" style="font-size:16px;">&#9889;</span>
@@ -815,11 +815,21 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       </div>
       <div id="export-info-html" class="export-info-bar"><span class="export-info-icon">i</span>Self-contained <code>.html</code> file with all assets embedded.</div>
       <div id="export-info-embed" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Drop-in snippet. Paste anywhere in your page <code>&lt;body&gt;</code>.</div>
-      <div id="export-info-webp" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Static <code>.webp</code> with pins drawn on — great for docs and social sharing.</div>
+      <div id="export-info-webp" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Static flat image with pins drawn on — great for docs and social sharing.</div>
       <div id="export-info-claude" class="export-info-bar" style="display:none;"><span class="export-info-icon">&#9889;</span>Copy this prompt into <strong>Claude Code</strong> — it contains your hotspot data, image, and full instructions to build or extend the project in any framework.</div>
+      <div class="form-group" id="image-format-group" style="display:none;margin-bottom:14px;">
+        <label style="margin-bottom:8px;">Format</label>
+        <div class="shape-toggle" id="image-format-toggle" style="margin-bottom:0;">
+          <button type="button" class="active" onclick="setImageFormat('webp')">WebP</button>
+          <button type="button" onclick="setImageFormat('jpeg')">JPEG</button>
+          <button type="button" onclick="setImageFormat('png')">PNG</button>
+          <button type="button" onclick="setImageFormat('gif')">GIF</button>
+        </div>
+        <div id="gif-quality-note" style="display:none;font-size:11px;color:var(--ink3);margin-top:8px;line-height:1.5;">GIF is limited to a 256-color palette and may show some color banding — pick WebP or PNG for full-fidelity color.</div>
+      </div>
       <div id="export-preview" class="export-code"></div>
       <div id="webp-preview-wrap" style="display:none;text-align:center;margin-top:4px;">
-        <img id="webp-preview-img" style="max-width:100%;max-height:260px;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.12);" alt="WebP preview">
+        <img id="webp-preview-img" style="max-width:100%;max-height:260px;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.12);" alt="Image preview">
         <div style="font-size:12px;color:var(--ink3);margin-top:8px;">Preview — click Download to save</div>
       </div>
     </div>
@@ -851,6 +861,9 @@ var highlightColor = '#22c55e';
 var highlightShape = 'rect';
 var highlightOpacity = 0.35;
 var exportTab = 'html';
+var imageFormat = 'webp';
+var previewObjectURL = null;
+function imageFormatExt(fmt) { return fmt === 'jpeg' ? 'jpg' : fmt; }
 var nextAnnId = 1;
 function genAnnId() { return 'a' + (nextAnnId++); }
 
@@ -2177,14 +2190,28 @@ function switchExportTab(tab) {
   var isClaude = tab === 'claude';
   document.getElementById('export-preview').style.display = (isWebp) ? 'none' : 'block';
   document.getElementById('webp-preview-wrap').style.display = isWebp ? 'block' : 'none';
+  document.getElementById('image-format-group').style.display = isWebp ? 'block' : 'none';
   document.getElementById('copy-btn').style.display = isWebp ? 'none' : 'inline-flex';
   document.getElementById('download-btn').style.display = isClaude ? 'none' : 'inline-flex';
   if (tab === 'html') document.getElementById('download-btn').textContent = 'Download .html';
   else if (tab === 'embed') document.getElementById('download-btn').textContent = 'Download snippet';
-  else if (tab === 'webp') document.getElementById('download-btn').textContent = 'Download .webp';
+  else if (tab === 'webp') document.getElementById('download-btn').textContent = 'Download .' + imageFormatExt(imageFormat);
   document.getElementById('copy-btn').textContent = isClaude ? 'Copy Prompt' : 'Copy to Clipboard';
   if (isWebp) renderWebPPreview();
   else refreshExportPreview();
+}
+
+function setImageFormat(fmt) {
+  imageFormat = fmt;
+  var fmts = ['webp', 'jpeg', 'png', 'gif'];
+  document.querySelectorAll('#image-format-toggle button').forEach(function(b, i) {
+    b.classList.toggle('active', fmts[i] === fmt);
+  });
+  document.getElementById('gif-quality-note').style.display = (fmt === 'gif') ? 'block' : 'none';
+  if (exportTab === 'webp') {
+    document.getElementById('download-btn').textContent = 'Download .' + imageFormatExt(fmt);
+    renderWebPPreview();
+  }
 }
 
 function refreshExportPreview() {
@@ -2205,6 +2232,7 @@ function openExport() {
   });
   document.getElementById('export-preview').style.display = 'block';
   document.getElementById('webp-preview-wrap').style.display = 'none';
+  document.getElementById('image-format-group').style.display = 'none';
   document.getElementById('copy-btn').style.display = 'inline-flex';
   document.getElementById('copy-btn').textContent = 'Copy to Clipboard';
   document.getElementById('download-btn').style.display = 'inline-flex';
@@ -2213,7 +2241,10 @@ function openExport() {
   document.getElementById('export-modal').style.display = 'flex';
 }
 
-function closeExport() { document.getElementById('export-modal').style.display = 'none'; }
+function closeExport() {
+  document.getElementById('export-modal').style.display = 'none';
+  if (previewObjectURL) { URL.revokeObjectURL(previewObjectURL); previewObjectURL = null; }
+}
 function closeExportOnOverlay(e) { if (e.target === document.getElementById('export-modal')) closeExport(); }
 
 function getActiveCode() {
@@ -2527,23 +2558,150 @@ function drawHotspotsOnCanvas(canvas, img) {
     ctx.fillText(String(i + 1), cx, cy);
   });
 }
+function flattenOnWhite(canvas) {
+  var out = document.createElement('canvas');
+  out.width = canvas.width; out.height = canvas.height;
+  var octx = out.getContext('2d');
+  octx.fillStyle = '#fff'; octx.fillRect(0, 0, out.width, out.height);
+  octx.drawImage(canvas, 0, 0);
+  return out;
+}
+
+function canvasToFormatBlob(canvas, format, cb) {
+  if (format === 'gif') {
+    var gifCanvas = flattenOnWhite(canvas);
+    cb(new Blob([encodeCanvasAsGIF(gifCanvas)], { type: 'image/gif' }));
+    return;
+  }
+  var srcCanvas = (format === 'jpeg') ? flattenOnWhite(canvas) : canvas;
+  var mime = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp';
+  srcCanvas.toBlob(cb, mime, 0.92);
+}
+
+function encodeCanvasAsGIF(canvas) {
+  var w = canvas.width, h = canvas.height;
+  var data = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+  var n = w * h;
+  var indices = new Uint8Array(n);
+  for (var i = 0; i < n; i++) {
+    var o = i * 4;
+    var r3 = data[o] >> 5, g3 = data[o + 1] >> 5, b2 = data[o + 2] >> 6;
+    indices[i] = (r3 << 5) | (g3 << 2) | b2;
+  }
+  var palette = new Uint8Array(768);
+  for (var idx = 0; idx < 256; idx++) {
+    var pr = (idx >> 5) & 7, pg = (idx >> 2) & 7, pb = idx & 3;
+    palette[idx * 3] = Math.round(pr * 255 / 7);
+    palette[idx * 3 + 1] = Math.round(pg * 255 / 7);
+    palette[idx * 3 + 2] = Math.round(pb * 255 / 3);
+  }
+  return buildGIFBytes(w, h, indices, palette);
+}
+
+function gifLZWEncode(minCodeSize, indexStream) {
+  var clearCode = 1 << minCodeSize;
+  var eoiCode = clearCode + 1;
+  var codeSize, nextCode, dict;
+  var output = [];
+  var bitBuffer = 0, bitCount = 0;
+  function emit(code) {
+    bitBuffer |= (code << bitCount);
+    bitCount += codeSize;
+    while (bitCount >= 8) { output.push(bitBuffer & 0xFF); bitBuffer >>= 8; bitCount -= 8; }
+  }
+  function resetDict() {
+    dict = new Map();
+    for (var i = 0; i < clearCode; i++) dict.set(String(i), i);
+    nextCode = eoiCode + 1;
+    codeSize = minCodeSize + 1;
+  }
+  resetDict();
+  emit(clearCode);
+  var w = null;
+  for (var idx = 0; idx < indexStream.length; idx++) {
+    var k = indexStream[idx];
+    var wk = (w === null) ? String(k) : (w + ',' + k);
+    if (dict.has(wk)) {
+      w = wk;
+    } else {
+      emit(dict.get(w));
+      if (nextCode < 4096) {
+        dict.set(wk, nextCode);
+        nextCode++;
+        if (nextCode === (1 << codeSize) + 1 && codeSize < 12) codeSize++;
+      } else {
+        emit(clearCode);
+        resetDict();
+      }
+      w = String(k);
+    }
+  }
+  if (w !== null) emit(dict.get(w));
+  emit(eoiCode);
+  if (bitCount > 0) { output.push(bitBuffer & 0xFF); bitCount = 0; }
+  return output;
+}
+
+function buildGIFBytes(w, h, indices, palette) {
+  var bytes = [];
+  function pushStr(s) { for (var i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i)); }
+  function push16(v) { bytes.push(v & 0xFF, (v >> 8) & 0xFF); }
+
+  pushStr('GIF89a');
+  push16(w); push16(h);
+  bytes.push(0xF7, 0, 0); // global color table (256 entries, 8-bit), bg index 0, no aspect ratio
+  for (var i = 0; i < 256; i++) bytes.push(palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
+
+  bytes.push(0x21, 0xF9, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00); // graphic control extension
+
+  bytes.push(0x2C); // image descriptor
+  push16(0); push16(0); push16(w); push16(h);
+  bytes.push(0x00);
+
+  var minCodeSize = 8;
+  bytes.push(minCodeSize);
+  var lzwBytes = gifLZWEncode(minCodeSize, indices);
+  for (var pos = 0; pos < lzwBytes.length; pos += 255) {
+    var chunk = lzwBytes.slice(pos, pos + 255);
+    bytes.push(chunk.length);
+    for (var j = 0; j < chunk.length; j++) bytes.push(chunk[j]);
+  }
+  bytes.push(0x00); // block terminator
+  bytes.push(0x3B); // trailer
+
+  return new Uint8Array(bytes);
+}
+
 function renderWebPPreview() {
   if (!backgroundDataURL) return;
+  var format = imageFormat;
   var img = new Image();
-  img.onload = function() { var c = document.createElement('canvas'); drawHotspotsOnCanvas(c, img); document.getElementById('webp-preview-img').src = c.toDataURL('image/webp', 0.92); };
+  img.onload = function() {
+    var c = document.createElement('canvas'); drawHotspotsOnCanvas(c, img);
+    canvasToFormatBlob(c, format, function(blob) {
+      if (previewObjectURL) URL.revokeObjectURL(previewObjectURL);
+      previewObjectURL = URL.createObjectURL(blob);
+      document.getElementById('webp-preview-img').src = previewObjectURL;
+    });
+  };
   img.src = backgroundDataURL;
 }
 function downloadWebP() {
   if (!backgroundDataURL) return;
+  var format = imageFormat;
   var btn = document.getElementById('download-btn');
   btn.textContent = 'Rendering...'; btn.disabled = true;
   var img = new Image();
   img.onload = function() {
     var c = document.createElement('canvas'); drawHotspotsOnCanvas(c, img);
-    var a = document.createElement('a');
-    a.href = c.toDataURL('image/webp', 0.92); a.download = 'hotspot-image.webp'; a.style.display = 'none';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    btn.textContent = 'Download .webp'; btn.disabled = false;
+    canvasToFormatBlob(c, format, function(blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'hotspot-image.' + imageFormatExt(format); a.style.display = 'none';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      btn.textContent = 'Download .' + imageFormatExt(format); btn.disabled = false;
+    });
   };
   img.src = backgroundDataURL;
 }

@@ -22,7 +22,7 @@ All four types coexist on one image, each with its own color (and, for highlight
 - **Export options**:
   - **HTML file** — a self-contained standalone page with everything embedded.
   - **Embed code** — a drop-in snippet you can paste into any existing page.
-  - **WebP image** — a flat image with every annotation drawn on, for docs or social sharing.
+  - **Image** — a flat image with every annotation drawn on, for docs or social sharing. Pick the format: **WebP**, **JPEG**, **PNG**, or **GIF**. GIF is encoded by a small built-in GIF89a/LZW encoder (no external library) using a fixed 256-color palette, so it may show some color banding — use WebP or PNG for full-fidelity color.
   - **Claude Code prompt** — your full annotation data, image, and build instructions, ready to paste into Claude Code to implement in any framework.
 
 ## Responsive design
