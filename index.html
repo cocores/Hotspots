@@ -145,6 +145,15 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .preview-toggle{font-size:12px;font-weight:500;padding:6px 14px;border-radius:16px;border:1px solid var(--panel-line);background:var(--panel2);color:var(--panel-muted);cursor:pointer;transition:all .2s var(--ease);display:inline-flex;align-items:center;gap:6px;margin-left:6px}
 .preview-toggle:hover{color:var(--panel-text)}
 .preview-toggle.active{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(26,26,255,.4)}
+.zoom-control{display:flex;align-items:center;gap:8px;margin-left:6px;padding:6px 12px;background:var(--panel2);border:1px solid var(--panel-line);border-radius:16px}
+.zoom-icon{font-size:12px;opacity:.6;flex-shrink:0}
+.zoom-slider{-webkit-appearance:none;appearance:none;width:90px;height:4px;border-radius:2px;background:var(--panel3);outline:none;cursor:pointer;flex-shrink:0}
+.zoom-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent2);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.4);transition:transform .15s var(--ease)}
+.zoom-slider::-webkit-slider-thumb:hover{transform:scale(1.15)}
+.zoom-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent2);border:none;cursor:pointer;transition:transform .15s var(--ease)}
+.zoom-slider::-moz-range-thumb:hover{transform:scale(1.15)}
+.zoom-slider::-moz-range-track{height:4px;border-radius:2px;background:var(--panel3)}
+.zoom-value{font-size:12px;font-weight:600;color:var(--panel-muted);min-width:32px;text-align:right;flex-shrink:0}
 .style-panel-section{display:none}
 .style-panel-section.active{display:block}
 .shape-toggle{display:flex;gap:3px;background:var(--panel2);padding:3px;border-radius:16px;border:1px solid var(--panel-line);margin-bottom:14px}
@@ -284,6 +293,9 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
   .tool-btn-icon{margin-right:0;}
   .preview-toggle{padding:7px 10px;}
   .preview-toggle-label{display:none;}
+  .zoom-control{padding:6px 8px;gap:5px;}
+  .zoom-icon{display:none;}
+  .zoom-slider{width:52px;}
 
   /* Mobile nav + sheet visible */
   .mobile-bottom-nav{display:block;}
@@ -355,6 +367,11 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <button class="mode-btn" id="tool-highlight" onclick="setTool('highlight')" title="Infographics / Highlights"><span class="tool-btn-icon">&#128444;&#65039;</span><span class="tool-btn-label">Highlight</span></button>
       </div>
       <button class="preview-toggle" id="preview-toggle" onclick="togglePreview()" title="Preview">&#128065;<span class="preview-toggle-label"> Preview</span></button>
+      <div class="zoom-control" id="zoom-control" title="Zoom the display view">
+        <span class="zoom-icon">&#128269;</span>
+        <input type="range" class="zoom-slider" id="zoom-slider" min="25" max="100" step="25" value="100" oninput="setZoom(this.value)">
+        <span class="zoom-value" id="zoom-value">100%</span>
+      </div>
       <span style="flex:1"></span>
       <span id="toolbar-hint" style="font-size:12px;color:#5f5f6e;">Upload an image to begin</span>
     </div>
@@ -862,6 +879,7 @@ var highlightShape = 'rect';
 var highlightOpacity = 0.35;
 var exportTab = 'html';
 var imageFormat = 'webp';
+var zoomLevel = 100;
 var previewObjectURL = null;
 function imageFormatExt(fmt) { return fmt === 'jpeg' ? 'jpg' : fmt; }
 var nextAnnId = 1;
@@ -899,6 +917,15 @@ function updateHeaderBadge() {
     badge.classList.remove('preview');
   }
 }
+
+function setZoom(val) {
+  zoomLevel = parseInt(val, 10);
+  document.getElementById('zoom-slider').value = zoomLevel;
+  document.getElementById('zoom-value').textContent = zoomLevel + '%';
+  var canvas = document.getElementById('image-canvas');
+  canvas.style.transform = zoomLevel === 100 ? '' : 'scale(' + (zoomLevel / 100) + ')';
+}
+function resetZoom() { setZoom(100); }
 
 function togglePreview() {
   previewMode = !previewMode;
@@ -947,6 +974,7 @@ function loadMainImage(file) {
     img.src = ev.target.result;
     document.getElementById('upload-zone').style.display = 'none';
     document.getElementById('image-canvas').style.display = 'inline-block';
+    resetZoom();
     updateToolbarHint();
     document.getElementById('export-btn').disabled = false;
   };
@@ -1731,6 +1759,7 @@ function resetTool() {
   document.getElementById('canvas-img').src = '';
   document.getElementById('image-canvas').style.display = 'none';
   document.getElementById('upload-zone').style.display = 'flex';
+  resetZoom();
   updateToolbarHint();
   document.getElementById('main-img-input').value = '';
   document.querySelectorAll('.hotspot').forEach(function(el) { el.remove(); });
