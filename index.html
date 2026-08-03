@@ -768,6 +768,10 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <label for="ann-text" id="ann-text-label">Label <span style="color:var(--accent);">*</span></label>
         <input type="text" id="ann-text" placeholder="e.g. Fix alignment here" maxlength="120">
       </div>
+      <div class="form-group" id="ann-value-group" style="display:none;">
+        <label for="ann-value">Value <span style="color:var(--ink3);font-weight:400;">(optional, numbers only)</span></label>
+        <input type="text" id="ann-value" inputmode="decimal" placeholder="e.g. 24" maxlength="20" oninput="sanitizeAnnValue(this)">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeAnnotationModal()">Cancel</button>
@@ -1177,7 +1181,7 @@ function measureDistancePx(m) {
   return Math.round(Math.sqrt(dx * dx + dy * dy));
 }
 function measureDistanceLabel(m) {
-  var dist = measureDistancePx(m) + 'px';
+  var dist = (m.value !== undefined && m.value !== null && m.value !== '') ? m.value : (measureDistancePx(m) + 'px');
   return m.label ? m.label + ': ' + dist : dist;
 }
 
@@ -1406,20 +1410,29 @@ function resetAnnDimensionPickers() {
   var cb = document.getElementById('ann-with-stand'); if (cb) cb.checked = false;
 }
 
+function sanitizeAnnValue(el) {
+  var v = el.value.replace(/[^0-9.]/g, '');
+  var parts = v.split('.');
+  if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  el.value = v;
+}
+
 function openMeasurementModal(x1, y1, x2, y2) {
   annModalContext = 'measurement';
   pendingAnnotation = { x1: x1, y1: y1, x2: x2, y2: y2 };
   resetAnnDimensionPickers();
   var distPx = measureDistancePx(pendingAnnotation);
   document.getElementById('ann-modal-title').textContent = 'Add Measurement';
-  document.getElementById('ann-modal-sub').textContent = distPx + 'px';
+  document.getElementById('ann-modal-sub').textContent = 'Drawn line: ' + distPx + 'px';
   document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
   document.getElementById('ann-text').value = '';
   document.getElementById('ann-text').style.borderColor = '';
   document.getElementById('ann-text').placeholder = 'e.g. Height, Width with stand...';
+  document.getElementById('ann-value').value = '';
   document.getElementById('ann-shape-group').style.display = 'none';
   document.getElementById('ann-dim-group').style.display = 'block';
   document.getElementById('ann-variant-group').style.display = 'block';
+  document.getElementById('ann-value-group').style.display = 'block';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1436,6 +1449,7 @@ function openCalloutModal(x1, y1, x2, y2) {
   document.getElementById('ann-shape-group').style.display = 'none';
   document.getElementById('ann-dim-group').style.display = 'none';
   document.getElementById('ann-variant-group').style.display = 'none';
+  document.getElementById('ann-value-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1453,6 +1467,7 @@ function openHighlightModal(x, y, w, h) {
   document.getElementById('ann-shape-group').style.display = 'block';
   document.getElementById('ann-dim-group').style.display = 'none';
   document.getElementById('ann-variant-group').style.display = 'none';
+  document.getElementById('ann-value-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1477,14 +1492,16 @@ function openMeasurementEditModal(id) {
     });
   }
   document.getElementById('ann-modal-title').textContent = 'Edit Measurement';
-  document.getElementById('ann-modal-sub').textContent = measureDistancePx(m) + 'px';
+  document.getElementById('ann-modal-sub').textContent = 'Drawn line: ' + measureDistancePx(m) + 'px';
   document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
   document.getElementById('ann-text').value = m.label || '';
   document.getElementById('ann-text').style.borderColor = '';
   document.getElementById('ann-text').placeholder = 'e.g. Height, Width with stand...';
+  document.getElementById('ann-value').value = m.value || '';
   document.getElementById('ann-shape-group').style.display = 'none';
   document.getElementById('ann-dim-group').style.display = 'block';
   document.getElementById('ann-variant-group').style.display = 'block';
+  document.getElementById('ann-value-group').style.display = 'block';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1498,7 +1515,8 @@ function closeAnnotationModalOnOverlay(e) { if (e.target === document.getElement
 function saveAnnotationModal() {
   var text = document.getElementById('ann-text').value.trim();
   if (annModalContext === 'measurement') {
-    var m = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, color: measureColor, label: text };
+    var value = document.getElementById('ann-value').value.trim();
+    var m = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, color: measureColor, label: text, value: value };
     measurements.push(m); createMeasurementEl(m);
   } else if (annModalContext === 'callout') {
     if (!text) { document.getElementById('ann-text').style.borderColor = '#ff4d2e'; document.getElementById('ann-text').focus(); return; }
@@ -1511,6 +1529,7 @@ function saveAnnotationModal() {
     var em = measurements.find(function(x) { return x.id === editingMeasurementId; });
     if (em) {
       em.label = text;
+      em.value = document.getElementById('ann-value').value.trim();
       var lbl = document.getElementById('ml-' + em.id);
       if (lbl) lbl.textContent = measureDistanceLabel(em);
     }
@@ -1520,7 +1539,8 @@ function saveAnnotationModal() {
 }
 
 function buildMeasurementCardHTML(m) {
-  var title = (m.label ? escHTML(m.label) + ': ' : '') + measureDistancePx(m) + 'px';
+  var dist = (m.value !== undefined && m.value !== null && m.value !== '') ? escHTML(m.value) : (measureDistancePx(m) + 'px');
+  var title = (m.label ? escHTML(m.label) + ': ' : '') + dist;
   return '<div class="hc-top">'
     + '<div class="hc-num" style="background:' + m.color + '">&#128207;</div>'
     + '<div class="hc-info"><div class="hc-title">' + title + '</div>'
@@ -1756,7 +1776,7 @@ function hsDataForExport() {
 
 function annotationsDataForExport() {
   return JSON.stringify({
-    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '' }; }),
+    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '', value: m.value || '' }; }),
     callouts: callouts.map(function(c) { return { x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2, color: c.color, text: c.text }; }),
     highlights: highlights.map(function(h) { return { x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' }; })
   });
@@ -1877,7 +1897,7 @@ function generateExportHTML() {
     + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
     + '    var lbl=document.createElement("div");lbl.className="ann-label";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";\n'
-    + '    lbl.textContent=(m.label?m.label+": ":"")+Math.round(Math.sqrt(dx*dx+dy*dy))+"px";\n'
+    + '    lbl.textContent=(m.label?m.label+": ":"")+(m.value?m.value:Math.round(Math.sqrt(dx*dx+dy*dy))+"px");\n'
     + '    document.getElementById("c").appendChild(lbl);\n'
     + '  });\n'
     + '}\n'
@@ -2038,7 +2058,7 @@ function generateEmbedCode() {
     + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
     + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";\n'
-    + '    lbl.textContent=(m.label?m.label+": ":"")+Math.round(Math.sqrt(dx*dx+dy*dy))+"px";\n'
+    + '    lbl.textContent=(m.label?m.label+": ":"")+(m.value?m.value:Math.round(Math.sqrt(dx*dx+dy*dy))+"px");\n'
     + '    w.appendChild(lbl);\n'
     + '  });\n'
     + '}\n'
@@ -2190,7 +2210,7 @@ function generateClaudeCodeExport() {
   var measurementSummary = measurements.map(function(m, i) {
     var dx = (m.x2 - m.x1) / 100 * (document.getElementById('canvas-img').naturalWidth || 1);
     var dy = (m.y2 - m.y1) / 100 * (document.getElementById('canvas-img').naturalHeight || 1);
-    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), label: m.label || '' };
+    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), label: m.label || '', value: m.value || '' };
   });
   var calloutSummary = callouts.map(function(c, i) {
     return { index: i + 1, from: { x: c.x1, y: c.y1 }, to: { x: c.x2, y: c.y2 }, color: c.color, text: c.text };
@@ -2213,7 +2233,7 @@ function generateClaudeCodeExport() {
     + '```json\n' + JSON.stringify(styleConfig, null, 2) + '\n```\n\n'
     + '**Hotspots (' + hotspots.length + ' total):**\n'
     + '```json\n' + JSON.stringify(hotspotSummary, null, 2) + '\n```\n\n'
-    + '**Measurements (' + measurements.length + ' total)** — pixel distances computed against the source image\'s natural resolution:\n'
+    + '**Measurements (' + measurements.length + ' total)** — pixel distances computed against the source image\'s natural resolution; if `value` is set, display that instead of `distancePx` (it\'s a user-entered real-world number, e.g. inches):\n'
     + '```json\n' + JSON.stringify(measurementSummary, null, 2) + '\n```\n\n'
     + '**Callouts (' + callouts.length + ' total)** — arrow + label pairs:\n'
     + '```json\n' + JSON.stringify(calloutSummary, null, 2) + '\n```\n\n'
@@ -2249,7 +2269,7 @@ function generateClaudeCodeExport() {
         ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
       : 'No animation on pins.\n\n')
     + '### Measurements\n'
-    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating label at the midpoint showing the optional `label` (e.g. "Height", "Width (without stand)") prefixed before `distancePx` (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size) — e.g. "Width (without stand): 340px". Render as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
+    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating label at the midpoint showing the optional `label` (e.g. "Height", "Width with stand") prefixed before the displayed distance. If `value` is a non-empty string, show that as the distance (it\'s a user-entered real-world number, e.g. inches or cm — display it as-is, don\'t append "px"); otherwise fall back to `distancePx` + "px" (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size) — e.g. "Width with stand: 24" or "Width with stand: 340px". Render as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
     + '### Callouts\n'
     + 'Each callout is an arrow from `from` to `to` (SVG line + a small triangular arrowhead polygon at `to`, rotated to the line\'s angle) plus a label bubble with `text`, positioned near the `from` point. Same SVG-overlay approach as measurements.\n\n'
     + '### Highlight Zones\n'
@@ -2335,7 +2355,7 @@ function drawHotspotsOnCanvas(canvas, img) {
       ctx.beginPath(); ctx.moveTo(pt[0] - tx, pt[1] - ty); ctx.lineTo(pt[0] + tx, pt[1] + ty); ctx.stroke();
     });
     var dx = (m.x2 - m.x1) / 100 * img.naturalWidth, dy = (m.y2 - m.y1) / 100 * img.naturalHeight;
-    var label = (m.label ? m.label + ': ' : '') + Math.round(Math.sqrt(dx * dx + dy * dy)) + 'px';
+    var label = (m.label ? m.label + ': ' : '') + (m.value ? m.value : Math.round(Math.sqrt(dx * dx + dy * dy)) + 'px');
     var fs = Math.max(12, img.naturalWidth * 0.013);
     ctx.font = '600 ' + fs + 'px system-ui,sans-serif';
     var tw = ctx.measureText(label).width;
