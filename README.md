@@ -1,4 +1,4 @@
-# Hotspot Builder
+# Annotation Tool
 
 A single-file, no-build-step tool for turning any image into an annotated, interactive experience — upload a picture, mark it up with hotspots, measurements, callouts, and highlight zones, and export the result as a standalone page, an embeddable snippet, a flat image, or a ready-to-paste prompt for Claude Code.
 
