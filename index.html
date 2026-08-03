@@ -130,7 +130,10 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .ann-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--panel-muted);margin:14px 0 6px;padding-left:2px}
 .ann-section-label:first-child{margin-top:0}
 .ann-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}
-.ann-label{position:absolute;transform:translate(-50%,-50%);background:#fff;color:var(--ink);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:'DM Sans',sans-serif}
+.ann-label{position:absolute;transform:translate(-50%,-50%);background:#fff;color:var(--ink);font-size:11px;font-weight:600;padding:6px 11px 6px 10px;border-radius:9px;border-left:3px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:7px}
+.ann-label .ml-tag{font-size:10px;font-weight:500;color:var(--ink3)}
+.ann-label .ml-num{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:-.2px}
+.ann-label .ml-unit{font-size:9px;font-weight:700;letter-spacing:.04em;color:#fff;padding:2px 6px;border-radius:5px;line-height:1.5}
 .callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:var(--ink);font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:'DM Sans',sans-serif}
 .highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}
 .highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}
@@ -771,6 +774,10 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <div class="form-group" id="ann-value-group" style="display:none;">
         <label for="ann-value">Value <span style="color:var(--ink3);font-weight:400;">(optional, numbers only)</span></label>
         <input type="text" id="ann-value" inputmode="decimal" placeholder="e.g. 24" maxlength="20" oninput="sanitizeAnnValue(this)">
+        <div class="shape-toggle" id="ann-unit-toggle" style="margin-top:10px;margin-bottom:0;">
+          <button type="button" onclick="setAnnUnit('in')">Inch (IN)</button>
+          <button type="button" onclick="setAnnUnit('cm')">Centimeter (CM)</button>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1180,9 +1187,21 @@ function measureDistancePx(m) {
   var dx = (m.x2 - m.x1) / 100 * n.w, dy = (m.y2 - m.y1) / 100 * n.h;
   return Math.round(Math.sqrt(dx * dx + dy * dy));
 }
+function measureHasValue(m) {
+  return m.value !== undefined && m.value !== null && m.value !== '';
+}
 function measureDistanceLabel(m) {
-  var dist = (m.value !== undefined && m.value !== null && m.value !== '') ? m.value : (measureDistancePx(m) + 'px');
+  var dist = measureHasValue(m) ? (m.value + (m.unit ? ' ' + m.unit.toUpperCase() : '')) : (measureDistancePx(m) + 'px');
   return m.label ? m.label + ': ' + dist : dist;
+}
+function buildMeasureLabelHTML(m) {
+  var hasVal = measureHasValue(m);
+  var numText = hasVal ? m.value : measureDistancePx(m);
+  var unitText = hasVal ? (m.unit ? m.unit.toUpperCase() : '') : 'PX';
+  var valueHTML = '<span class="ml-num">' + escHTML(String(numText)) + '</span>'
+    + (unitText ? '<span class="ml-unit" style="background:' + m.color + '">' + unitText + '</span>' : '');
+  var tagHTML = m.label ? '<span class="ml-tag">' + escHTML(m.label) + '</span>' : '';
+  return tagHTML + valueHTML;
 }
 
 function createMeasurementEl(m) {
@@ -1212,7 +1231,8 @@ function createMeasurementEl(m) {
   var label = document.createElement('div');
   label.className = 'ann-label'; label.id = 'ml-' + m.id;
   label.style.left = ((m.x1 + m.x2) / 2) + '%'; label.style.top = ((m.y1 + m.y2) / 2) + '%';
-  label.textContent = measureDistanceLabel(m);
+  label.style.borderLeftColor = m.color;
+  label.innerHTML = buildMeasureLabelHTML(m);
   document.getElementById('image-canvas').appendChild(label);
 }
 function deleteMeasurement(id) {
@@ -1380,6 +1400,7 @@ var pendingAnnotation = null;
 var editingMeasurementId = null;
 var pendingAnnDimension = '';
 var pendingAnnWithStand = false;
+var pendingAnnUnit = '';
 
 function setAnnShape(shape) {
   pendingHighlightShape = shape;
@@ -1405,9 +1426,17 @@ function setAnnWithStand(checked) {
   composeAnnLabel();
 }
 function resetAnnDimensionPickers() {
-  pendingAnnDimension = ''; pendingAnnWithStand = false;
+  pendingAnnDimension = ''; pendingAnnWithStand = false; pendingAnnUnit = '';
   document.querySelectorAll('#ann-dim-toggle button').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('#ann-unit-toggle button').forEach(function(b) { b.classList.remove('active'); });
   var cb = document.getElementById('ann-with-stand'); if (cb) cb.checked = false;
+}
+
+function setAnnUnit(unit) {
+  pendingAnnUnit = (pendingAnnUnit === unit) ? '' : unit;
+  document.querySelectorAll('#ann-unit-toggle button').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 ? 'in' : 'cm') === pendingAnnUnit);
+  });
 }
 
 function sanitizeAnnValue(el) {
@@ -1491,6 +1520,12 @@ function openMeasurementEditModal(id) {
       b.classList.toggle('active', b.textContent.trim() === rest);
     });
   }
+  if (m.unit === 'in' || m.unit === 'cm') {
+    pendingAnnUnit = m.unit;
+    document.querySelectorAll('#ann-unit-toggle button').forEach(function(b, i) {
+      b.classList.toggle('active', (i === 0 ? 'in' : 'cm') === m.unit);
+    });
+  }
   document.getElementById('ann-modal-title').textContent = 'Edit Measurement';
   document.getElementById('ann-modal-sub').textContent = 'Drawn line: ' + measureDistancePx(m) + 'px';
   document.getElementById('ann-text-label').innerHTML = 'Label <span style="color:var(--ink3);font-weight:400;">(optional)</span>';
@@ -1516,7 +1551,7 @@ function saveAnnotationModal() {
   var text = document.getElementById('ann-text').value.trim();
   if (annModalContext === 'measurement') {
     var value = document.getElementById('ann-value').value.trim();
-    var m = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, color: measureColor, label: text, value: value };
+    var m = { id: genAnnId(), x1: pendingAnnotation.x1, y1: pendingAnnotation.y1, x2: pendingAnnotation.x2, y2: pendingAnnotation.y2, color: measureColor, label: text, value: value, unit: value ? pendingAnnUnit : '' };
     measurements.push(m); createMeasurementEl(m);
   } else if (annModalContext === 'callout') {
     if (!text) { document.getElementById('ann-text').style.borderColor = '#ff4d2e'; document.getElementById('ann-text').focus(); return; }
@@ -1530,8 +1565,9 @@ function saveAnnotationModal() {
     if (em) {
       em.label = text;
       em.value = document.getElementById('ann-value').value.trim();
+      em.unit = em.value ? pendingAnnUnit : '';
       var lbl = document.getElementById('ml-' + em.id);
-      if (lbl) lbl.textContent = measureDistanceLabel(em);
+      if (lbl) lbl.innerHTML = buildMeasureLabelHTML(em);
     }
   }
   closeAnnotationModal();
@@ -1539,7 +1575,7 @@ function saveAnnotationModal() {
 }
 
 function buildMeasurementCardHTML(m) {
-  var dist = (m.value !== undefined && m.value !== null && m.value !== '') ? escHTML(m.value) : (measureDistancePx(m) + 'px');
+  var dist = measureHasValue(m) ? escHTML(m.value) + (m.unit ? ' ' + m.unit.toUpperCase() : '') : (measureDistancePx(m) + 'px');
   var title = (m.label ? escHTML(m.label) + ': ' : '') + dist;
   return '<div class="hc-top">'
     + '<div class="hc-num" style="background:' + m.color + '">&#128207;</div>'
@@ -1776,7 +1812,7 @@ function hsDataForExport() {
 
 function annotationsDataForExport() {
   return JSON.stringify({
-    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '', value: m.value || '' }; }),
+    measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '', value: m.value || '', unit: m.unit || '' }; }),
     callouts: callouts.map(function(c) { return { x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2, color: c.color, text: c.text }; }),
     highlights: highlights.map(function(h) { return { x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' }; })
   });
@@ -1828,7 +1864,10 @@ function generateExportHTML() {
     + '.tt-bh{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:system-ui,sans-serif}\n'
     + '.tt-bh:hover{opacity:.85}\n'
     + '.ann-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}\n'
-    + '.ann-label{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:system-ui,sans-serif}\n'
+    + '.ann-label{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:6px 11px 6px 10px;border-radius:9px;border-left:3px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:7px}\n'
+    + '.ann-label .ml-tag{font-size:10px;font-weight:500;color:#8a8a92}\n'
+    + '.ann-label .ml-num{font-size:13px;font-weight:700;color:#111;letter-spacing:-.2px}\n'
+    + '.ann-label .ml-unit{font-size:9px;font-weight:700;letter-spacing:.04em;color:#fff;padding:2px 6px;border-radius:5px;line-height:1.5}\n'
     + '.callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
     + '.highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
     + '.highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
@@ -1896,8 +1935,12 @@ function generateExportHTML() {
     + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
     + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
-    + '    var lbl=document.createElement("div");lbl.className="ann-label";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";\n'
-    + '    lbl.textContent=(m.label?m.label+": ":"")+(m.value?m.value:Math.round(Math.sqrt(dx*dx+dy*dy))+"px");\n'
+    + '    var lbl=document.createElement("div");lbl.className="ann-label";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
+    + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
+    + '    if(m.label){var mlt=document.createElement("span");mlt.className="ml-tag";mlt.textContent=m.label;lbl.appendChild(mlt);}\n'
+    + '    var mln=document.createElement("span");mln.className="ml-num";mln.textContent=hasVal?m.value:Math.round(Math.sqrt(dx*dx+dy*dy));lbl.appendChild(mln);\n'
+    + '    var mluTxt=hasVal?(m.unit?m.unit.toUpperCase():""):"PX";\n'
+    + '    if(mluTxt){var mlu=document.createElement("span");mlu.className="ml-unit";mlu.style.background=m.color;mlu.textContent=mluTxt;lbl.appendChild(mlu);}\n'
     + '    document.getElementById("c").appendChild(lbl);\n'
     + '  });\n'
     + '}\n'
@@ -1992,7 +2035,10 @@ function generateEmbedCode() {
     + '.' + p + 'bh{display:flex;align-items:center;justify-content:center;margin-top:10px;background:#0066cc;color:#fff;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:system-ui,sans-serif}\n'
     + '.' + p + 'bh:hover{opacity:.85}\n'
     + '.' + p + 'svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5}\n'
-    + '.' + p + 'lbl{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:system-ui,sans-serif}\n'
+    + '.' + p + 'lbl{position:absolute;transform:translate(-50%,-50%);background:#fff;color:#111;font-size:11px;font-weight:600;padding:6px 11px 6px 10px;border-radius:9px;border-left:3px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.28);white-space:nowrap;pointer-events:none;z-index:6;font-family:system-ui,sans-serif;display:flex;align-items:center;gap:7px}\n'
+    + '.' + p + 'lbl .' + p + 'mlt{font-size:10px;font-weight:500;color:#8a8a92}\n'
+    + '.' + p + 'lbl .' + p + 'mln{font-size:13px;font-weight:700;color:#111;letter-spacing:-.2px}\n'
+    + '.' + p + 'lbl .' + p + 'mlu{font-size:9px;font-weight:700;letter-spacing:.04em;color:#fff;padding:2px 6px;border-radius:5px;line-height:1.5}\n'
     + '.' + p + 'clbl{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
     + '.' + p + 'hlz{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
     + '.' + p + 'hlbl{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
@@ -2057,8 +2103,12 @@ function generateEmbedCode() {
     + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
     + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
-    + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";\n'
-    + '    lbl.textContent=(m.label?m.label+": ":"")+(m.value?m.value:Math.round(Math.sqrt(dx*dx+dy*dy))+"px");\n'
+    + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl";lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
+    + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
+    + '    if(m.label){var mlt=document.createElement("span");mlt.className="' + p + 'mlt";mlt.textContent=m.label;lbl.appendChild(mlt);}\n'
+    + '    var mln=document.createElement("span");mln.className="' + p + 'mln";mln.textContent=hasVal?m.value:Math.round(Math.sqrt(dx*dx+dy*dy));lbl.appendChild(mln);\n'
+    + '    var mluTxt=hasVal?(m.unit?m.unit.toUpperCase():""):"PX";\n'
+    + '    if(mluTxt){var mlu=document.createElement("span");mlu.className="' + p + 'mlu";mlu.style.background=m.color;mlu.textContent=mluTxt;lbl.appendChild(mlu);}\n'
     + '    w.appendChild(lbl);\n'
     + '  });\n'
     + '}\n'
@@ -2210,7 +2260,7 @@ function generateClaudeCodeExport() {
   var measurementSummary = measurements.map(function(m, i) {
     var dx = (m.x2 - m.x1) / 100 * (document.getElementById('canvas-img').naturalWidth || 1);
     var dy = (m.y2 - m.y1) / 100 * (document.getElementById('canvas-img').naturalHeight || 1);
-    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), label: m.label || '', value: m.value || '' };
+    return { index: i + 1, from: { x: m.x1, y: m.y1 }, to: { x: m.x2, y: m.y2 }, color: m.color, distancePx: Math.round(Math.sqrt(dx * dx + dy * dy)), label: m.label || '', value: m.value || '', unit: m.unit || '' };
   });
   var calloutSummary = callouts.map(function(c, i) {
     return { index: i + 1, from: { x: c.x1, y: c.y1 }, to: { x: c.x2, y: c.y2 }, color: c.color, text: c.text };
@@ -2233,7 +2283,7 @@ function generateClaudeCodeExport() {
     + '```json\n' + JSON.stringify(styleConfig, null, 2) + '\n```\n\n'
     + '**Hotspots (' + hotspots.length + ' total):**\n'
     + '```json\n' + JSON.stringify(hotspotSummary, null, 2) + '\n```\n\n'
-    + '**Measurements (' + measurements.length + ' total)** — pixel distances computed against the source image\'s natural resolution; if `value` is set, display that instead of `distancePx` (it\'s a user-entered real-world number, e.g. inches):\n'
+    + '**Measurements (' + measurements.length + ' total)** — pixel distances computed against the source image\'s natural resolution; if `value` is set, display that instead of `distancePx`, suffixed with `unit` (`"in"` or `"cm"`, uppercased, e.g. "IN"/"CM") when present:\n'
     + '```json\n' + JSON.stringify(measurementSummary, null, 2) + '\n```\n\n'
     + '**Callouts (' + callouts.length + ' total)** — arrow + label pairs:\n'
     + '```json\n' + JSON.stringify(calloutSummary, null, 2) + '\n```\n\n'
@@ -2269,7 +2319,7 @@ function generateClaudeCodeExport() {
         ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
       : 'No animation on pins.\n\n')
     + '### Measurements\n'
-    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating label at the midpoint showing the optional `label` (e.g. "Height", "Width with stand") prefixed before the displayed distance. If `value` is a non-empty string, show that as the distance (it\'s a user-entered real-world number, e.g. inches or cm — display it as-is, don\'t append "px"); otherwise fall back to `distancePx` + "px" (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size) — e.g. "Width with stand: 24" or "Width with stand: 340px". Render as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
+    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating chip label at the midpoint. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"` or `"cm"` — a small colored pill badge with "IN" or "CM" (colored using the measurement\'s own `color`). If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. Render the line/ticks as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
     + '### Callouts\n'
     + 'Each callout is an arrow from `from` to `to` (SVG line + a small triangular arrowhead polygon at `to`, rotated to the line\'s angle) plus a label bubble with `text`, positioned near the `from` point. Same SVG-overlay approach as measurements.\n\n'
     + '### Highlight Zones\n'
@@ -2313,6 +2363,15 @@ function hexToRgbaStr(hex, alpha) {
   var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
   return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
 }
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
 function drawHotspotsOnCanvas(canvas, img) {
   var ctx = canvas.getContext('2d');
   canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
@@ -2355,15 +2414,63 @@ function drawHotspotsOnCanvas(canvas, img) {
       ctx.beginPath(); ctx.moveTo(pt[0] - tx, pt[1] - ty); ctx.lineTo(pt[0] + tx, pt[1] + ty); ctx.stroke();
     });
     var dx = (m.x2 - m.x1) / 100 * img.naturalWidth, dy = (m.y2 - m.y1) / 100 * img.naturalHeight;
-    var label = (m.label ? m.label + ': ' : '') + (m.value ? m.value : Math.round(Math.sqrt(dx * dx + dy * dy)) + 'px');
-    var fs = Math.max(12, img.naturalWidth * 0.013);
-    ctx.font = '600 ' + fs + 'px system-ui,sans-serif';
-    var tw = ctx.measureText(label).width;
+    var hasVal = m.value !== undefined && m.value !== null && m.value !== '';
+    var numText = String(hasVal ? m.value : Math.round(Math.sqrt(dx * dx + dy * dy)));
+    var unitText = hasVal ? (m.unit ? m.unit.toUpperCase() : '') : 'PX';
+    var tagText = m.label || '';
+    var fsNum = Math.max(13, img.naturalWidth * 0.014);
+    var fsTag = Math.max(10, img.naturalWidth * 0.0105);
+    var fsUnit = Math.max(9, img.naturalWidth * 0.0095);
+    var gap = 7, unitPadX = 6;
+    ctx.font = '500 ' + fsTag + 'px system-ui,sans-serif';
+    var tagW = tagText ? ctx.measureText(tagText).width : 0;
+    ctx.font = '700 ' + fsNum + 'px system-ui,sans-serif';
+    var numW = ctx.measureText(numText).width;
+    ctx.font = '700 ' + fsUnit + 'px system-ui,sans-serif';
+    var unitTextW = unitText ? ctx.measureText(unitText).width : 0;
+    var unitW = unitText ? unitTextW + unitPadX * 2 : 0;
+    var innerH = Math.max(fsNum, fsUnit + 6);
+    var padY = 7, padXL = 12, padXR = 11;
+    var contentW = tagW + (tagW ? gap : 0) + numW + (unitW ? gap : 0) + unitW;
+    var boxW = contentW + padXL + padXR;
+    var boxH = innerH + padY * 2;
     var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(mx - tw / 2 - 8, my - fs / 2 - 6, tw + 16, fs + 12);
-    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(label, mx, my + 1);
+    var boxX = mx - boxW / 2, boxY = my - boxH / 2;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    roundRectPath(ctx, boxX, boxY, boxW, boxH, 9);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundRectPath(ctx, boxX, boxY, boxW, boxH, 9);
+    ctx.clip();
+    ctx.fillStyle = m.color;
+    ctx.fillRect(boxX, boxY, 3, boxH);
+    ctx.restore();
+
+    var cx = boxX + padXL, cy = my;
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    if (tagText) {
+      ctx.font = '500 ' + fsTag + 'px system-ui,sans-serif';
+      ctx.fillStyle = '#8a8a92';
+      ctx.fillText(tagText, cx, cy);
+      cx += tagW + gap;
+    }
+    ctx.font = '700 ' + fsNum + 'px system-ui,sans-serif';
+    ctx.fillStyle = '#111';
+    ctx.fillText(numText, cx, cy);
+    cx += numW;
+    if (unitText) {
+      cx += gap;
+      var unitBoxH = fsUnit + 6;
+      roundRectPath(ctx, cx, cy - unitBoxH / 2, unitW, unitBoxH, 5);
+      ctx.fillStyle = m.color; ctx.fill();
+      ctx.font = '700 ' + fsUnit + 'px system-ui,sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(unitText, cx + unitPadX, cy);
+    }
     ctx.restore();
   });
 
