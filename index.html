@@ -246,7 +246,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 .video-upload-btn{display:block;width:100%;text-align:center;box-sizing:border-box}
 .hidden-input{position:fixed;top:0;left:0;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0,0,0,0);opacity:0}
 .bh-field-row{display:flex;gap:8px;align-items:center}
-.ann-checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:0}
+.ann-checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:8px}
+.ann-checkbox-row:last-child{margin-bottom:0}
 .ann-checkbox-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent2);cursor:pointer}
 .bh-link-preview-box{display:none;margin-top:8px;font-size:12px;color:var(--ink3);background:var(--bg);border-radius:7px;padding:6px 10px;word-break:break-all}
 .export-code{background:#0b0b11;border-radius:var(--radius);padding:1rem;font-family:'SF Mono','Courier New',monospace;font-size:12px;color:#a8b2d8;overflow-x:auto;max-height:300px;overflow-y:auto;line-height:1.6;white-space:pre;border:1px solid rgba(255,255,255,.06)}
@@ -821,6 +822,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       </div>
       <div class="form-group" id="ann-variant-group" style="display:none;">
         <label class="ann-checkbox-row"><input type="checkbox" id="ann-with-stand" onchange="setAnnWithStand(this.checked)"> With stand</label>
+        <label class="ann-checkbox-row"><input type="checkbox" id="ann-with-lens" onchange="setAnnWithLens(this.checked)"> With lens <span style="color:var(--ink3);font-weight:400;">(cameras)</span></label>
+        <label class="ann-checkbox-row"><input type="checkbox" id="ann-with-wheels" onchange="setAnnWithWheels(this.checked)"> With wheels <span style="color:var(--ink3);font-weight:400;">(bags/cases)</span></label>
       </div>
       <div class="form-group">
         <label for="ann-text" id="ann-text-label">Label <span style="color:var(--accent);">*</span></label>
@@ -1603,6 +1606,8 @@ var pendingAnnotation = null;
 var editingMeasurementId = null;
 var pendingAnnDimension = '';
 var pendingAnnWithStand = false;
+var pendingAnnWithLens = false;
+var pendingAnnWithWheels = false;
 var pendingAnnUnit = '';
 var pendingAnnDirection = 'horizontal';
 
@@ -1615,7 +1620,14 @@ function setAnnShape(shape) {
 
 function composeAnnLabel() {
   var label = pendingAnnDimension;
-  if (pendingAnnWithStand) label = label ? label + ' with stand' : 'With stand';
+  var mods = [];
+  if (pendingAnnWithStand) mods.push('stand');
+  if (pendingAnnWithLens) mods.push('lens');
+  if (pendingAnnWithWheels) mods.push('wheels');
+  if (mods.length) {
+    var phrase = 'with ' + mods.join(', ');
+    label = label ? label + ' ' + phrase : phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  }
   document.getElementById('ann-text').value = label;
 }
 function setAnnDimension(dim) {
@@ -1629,12 +1641,22 @@ function setAnnWithStand(checked) {
   pendingAnnWithStand = checked;
   composeAnnLabel();
 }
+function setAnnWithLens(checked) {
+  pendingAnnWithLens = checked;
+  composeAnnLabel();
+}
+function setAnnWithWheels(checked) {
+  pendingAnnWithWheels = checked;
+  composeAnnLabel();
+}
 function resetAnnDimensionPickers() {
-  pendingAnnDimension = ''; pendingAnnWithStand = false; pendingAnnUnit = ''; pendingAnnDirection = 'horizontal';
+  pendingAnnDimension = ''; pendingAnnWithStand = false; pendingAnnWithLens = false; pendingAnnWithWheels = false; pendingAnnUnit = ''; pendingAnnDirection = 'horizontal';
   document.querySelectorAll('#ann-dim-toggle button').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('#ann-unit-toggle button').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('#ann-direction-toggle button').forEach(function(b, i) { b.classList.toggle('active', i === 0); });
   var cb = document.getElementById('ann-with-stand'); if (cb) cb.checked = false;
+  var cbl = document.getElementById('ann-with-lens'); if (cbl) cbl.checked = false;
+  var cbw = document.getElementById('ann-with-wheels'); if (cbw) cbw.checked = false;
 }
 
 function setAnnUnit(unit) {
@@ -1724,10 +1746,13 @@ function openMeasurementEditModal(id) {
   resetAnnDimensionPickers();
   // Best-effort: pre-select the checkbox/chip if the stored label matches what they'd produce
   var rest = m.label || '';
-  if (/\s*with stand$/i.test(rest)) {
-    pendingAnnWithStand = true;
-    document.getElementById('ann-with-stand').checked = true;
-    rest = rest.replace(/\s*with stand$/i, '');
+  var modMatch = rest.match(/\s*with ((?:stand|lens|wheels)(?:,\s*(?:stand|lens|wheels))*)$/i);
+  if (modMatch) {
+    var mods = modMatch[1].toLowerCase().split(/,\s*/);
+    if (mods.indexOf('stand') !== -1) { pendingAnnWithStand = true; document.getElementById('ann-with-stand').checked = true; }
+    if (mods.indexOf('lens') !== -1) { pendingAnnWithLens = true; document.getElementById('ann-with-lens').checked = true; }
+    if (mods.indexOf('wheels') !== -1) { pendingAnnWithWheels = true; document.getElementById('ann-with-wheels').checked = true; }
+    rest = rest.replace(modMatch[0], '');
   }
   if (rest === 'Height' || rest === 'Width' || rest === 'Depth') {
     pendingAnnDimension = rest;
