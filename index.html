@@ -835,6 +835,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <div class="shape-toggle" id="ann-unit-toggle" style="margin-top:10px;margin-bottom:0;">
           <button type="button" onclick="setAnnUnit('in')">Inch (IN)</button>
           <button type="button" onclick="setAnnUnit('cm')">Centimeter (CM)</button>
+          <button type="button" onclick="setAnnUnit('ft')">Feet (FT)</button>
         </div>
       </div>
       <div class="form-group" id="ann-direction-group" style="display:none;">
@@ -1395,14 +1396,19 @@ function measureDistancePx(m) {
 function measureHasValue(m) {
   return m.value !== undefined && m.value !== null && m.value !== '';
 }
+function unitDisplayText(unit, value) {
+  if (!unit) return '';
+  if (unit === 'ft') return (parseFloat(value) === 1) ? 'FOOT' : 'FEET';
+  return unit.toUpperCase();
+}
 function measureDistanceLabel(m) {
-  var dist = measureHasValue(m) ? (m.value + (m.unit ? ' ' + m.unit.toUpperCase() : '')) : (measureDistancePx(m) + 'px');
+  var dist = measureHasValue(m) ? (m.value + (m.unit ? ' ' + unitDisplayText(m.unit, m.value) : '')) : (measureDistancePx(m) + 'px');
   return m.label ? m.label + ': ' + dist : dist;
 }
 function buildMeasureLabelHTML(m) {
   var hasVal = measureHasValue(m);
   var numText = hasVal ? m.value : measureDistancePx(m);
-  var unitText = hasVal ? (m.unit ? m.unit.toUpperCase() : '') : 'PX';
+  var unitText = hasVal ? (m.unit ? unitDisplayText(m.unit, m.value) : '') : 'PX';
   var valueHTML = '<span class="ml-num">' + escHTML(String(numText)) + '</span>'
     + (unitText ? '<span class="ml-unit" style="background:' + m.color + '">' + unitText + '</span>' : '');
   var tagHTML = m.label ? '<span class="ml-tag">' + escHTML(m.label) + '</span>' : '';
@@ -1524,6 +1530,21 @@ function pctFromEvent(e) {
   var y = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
   return { x: x, y: y };
 }
+function constrainToStraightLine(x1Pct, y1Pct, p) {
+  var img = document.getElementById('canvas-img');
+  var w = img.clientWidth, h = img.clientHeight;
+  if (!w || !h) return p;
+  var x1 = x1Pct / 100 * w, y1 = y1Pct / 100 * h;
+  var x2 = p.x / 100 * w, y2 = p.y / 100 * h;
+  var dx = x2 - x1, dy = y2 - y1;
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  var angle = Math.atan2(dy, dx);
+  var step = Math.PI / 4;
+  var snapped = Math.round(angle / step) * step;
+  var sx = x1 + Math.cos(snapped) * dist;
+  var sy = y1 + Math.sin(snapped) * dist;
+  return { x: Math.max(0, Math.min(100, sx / w * 100)), y: Math.max(0, Math.min(100, sy / h * 100)) };
+}
 function clearDrawingPreview() {
   var l = document.getElementById('draw-preview-line'); if (l) l.remove();
   var b = document.getElementById('draw-preview-box'); if (b) b.remove();
@@ -1588,6 +1609,7 @@ function updateDrawingActiveClass() {
   viewport.addEventListener('pointermove', function(e) {
     if (!drawingState || e.pointerId !== drawingState.pointerId) return;
     var p = pctFromEvent(e);
+    if (e.shiftKey && drawingState.tool === 'measure') p = constrainToStraightLine(drawingState.x1, drawingState.y1, p);
     drawingState.x2 = p.x; drawingState.y2 = p.y;
     renderDrawingPreview();
   });
@@ -1659,10 +1681,11 @@ function resetAnnDimensionPickers() {
   var cbw = document.getElementById('ann-with-wheels'); if (cbw) cbw.checked = false;
 }
 
+var ANN_UNIT_ORDER = ['in', 'cm', 'ft'];
 function setAnnUnit(unit) {
   pendingAnnUnit = (pendingAnnUnit === unit) ? '' : unit;
   document.querySelectorAll('#ann-unit-toggle button').forEach(function(b, i) {
-    b.classList.toggle('active', (i === 0 ? 'in' : 'cm') === pendingAnnUnit);
+    b.classList.toggle('active', ANN_UNIT_ORDER[i] === pendingAnnUnit);
   });
 }
 
@@ -1760,10 +1783,10 @@ function openMeasurementEditModal(id) {
       b.classList.toggle('active', b.textContent.trim() === rest);
     });
   }
-  if (m.unit === 'in' || m.unit === 'cm') {
+  if (ANN_UNIT_ORDER.indexOf(m.unit) !== -1) {
     pendingAnnUnit = m.unit;
     document.querySelectorAll('#ann-unit-toggle button').forEach(function(b, i) {
-      b.classList.toggle('active', (i === 0 ? 'in' : 'cm') === m.unit);
+      b.classList.toggle('active', ANN_UNIT_ORDER[i] === m.unit);
     });
   }
   pendingAnnDirection = (m.direction === 'vertical') ? 'vertical' : 'horizontal';
@@ -1821,7 +1844,7 @@ function saveAnnotationModal() {
 }
 
 function buildMeasurementCardHTML(m) {
-  var dist = measureHasValue(m) ? escHTML(m.value) + (m.unit ? ' ' + m.unit.toUpperCase() : '') : (measureDistancePx(m) + 'px');
+  var dist = measureHasValue(m) ? escHTML(m.value) + (m.unit ? ' ' + unitDisplayText(m.unit, m.value) : '') : (measureDistancePx(m) + 'px');
   var title = (m.label ? escHTML(m.label) + ': ' : '') + dist;
   return '<div class="hc-top">'
     + '<div class="hc-num" style="background:' + m.color + '">&#128207;</div>'
@@ -2225,7 +2248,7 @@ function generateExportHTML() {
     + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
     + '    if(m.label){var mlt=document.createElement("span");mlt.className="ml-tag";mlt.textContent=m.label;lbl.appendChild(mlt);}\n'
     + '    var mln=document.createElement("span");mln.className="ml-num";mln.textContent=hasVal?m.value:Math.round(Math.sqrt(dx*dx+dy*dy));lbl.appendChild(mln);\n'
-    + '    var mluTxt=hasVal?(m.unit?m.unit.toUpperCase():""):"PX";\n'
+    + '    var mluTxt=hasVal?(m.unit?(m.unit==="ft"?(parseFloat(m.value)===1?"FOOT":"FEET"):m.unit.toUpperCase()):""):"PX";\n'
     + '    if(mluTxt){var mlu=document.createElement("span");mlu.className="ml-unit";mlu.style.background=m.color;mlu.textContent=mluTxt;lbl.appendChild(mlu);}\n'
     + '    document.getElementById("c").appendChild(lbl);\n'
     + '  });\n'
@@ -2427,7 +2450,7 @@ function generateEmbedCode() {
     + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
     + '    if(m.label){var mlt=document.createElement("span");mlt.className="' + p + 'mlt";mlt.textContent=m.label;lbl.appendChild(mlt);}\n'
     + '    var mln=document.createElement("span");mln.className="' + p + 'mln";mln.textContent=hasVal?m.value:Math.round(Math.sqrt(dx*dx+dy*dy));lbl.appendChild(mln);\n'
-    + '    var mluTxt=hasVal?(m.unit?m.unit.toUpperCase():""):"PX";\n'
+    + '    var mluTxt=hasVal?(m.unit?(m.unit==="ft"?(parseFloat(m.value)===1?"FOOT":"FEET"):m.unit.toUpperCase()):""):"PX";\n'
     + '    if(mluTxt){var mlu=document.createElement("span");mlu.className="' + p + 'mlu";mlu.style.background=m.color;mlu.textContent=mluTxt;lbl.appendChild(mlu);}\n'
     + '    w.appendChild(lbl);\n'
     + '  });\n'
@@ -2660,7 +2683,7 @@ function generateClaudeCodeExport() {
         ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
       : 'No animation on pins.\n\n')
     + '### Measurements\n'
-    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating chip label at the midpoint. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"` or `"cm"` — a small colored pill badge with "IN" or "CM" (colored using the measurement\'s own `color`). If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. If `direction` is `"vertical"`, rotate the whole chip -90 degrees around its own center (so the text reads bottom-to-top) — CSS: `transform: translate(-50%,-50%) rotate(-90deg)` in place of the default `translate(-50%,-50%)`; the ruler line itself is never rotated, only the chip. Render the line/ticks as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
+    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating chip label at the midpoint. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"`, `"cm"`, or `"ft"` — a small colored pill badge with "IN", "CM", or "FOOT"/"FEET" (colored using the measurement\'s own `color`). For `"ft"`, singularize the badge to "FOOT" when `value` is exactly `1`, otherwise "FEET" (e.g. value `"1"` → "FOOT", value `"3"` → "FEET"); `"in"`/`"cm"` never pluralize. If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. If `direction` is `"vertical"`, rotate the whole chip -90 degrees around its own center (so the text reads bottom-to-top) — CSS: `transform: translate(-50%,-50%) rotate(-90deg)` in place of the default `translate(-50%,-50%)`; the ruler line itself is never rotated, only the chip. Render the line/ticks as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
     + '### Callouts\n'
     + 'Each callout is an arrow from `from` to `to` (SVG line + a small triangular arrowhead polygon at `to`, rotated to the line\'s angle) plus a label bubble with `text`, positioned near the `from` point. Same SVG-overlay approach as measurements.\n\n'
     + '### Highlight Zones\n'
@@ -2757,7 +2780,7 @@ function drawHotspotsOnCanvas(canvas, img) {
     var dx = (m.x2 - m.x1) / 100 * img.naturalWidth, dy = (m.y2 - m.y1) / 100 * img.naturalHeight;
     var hasVal = m.value !== undefined && m.value !== null && m.value !== '';
     var numText = String(hasVal ? m.value : Math.round(Math.sqrt(dx * dx + dy * dy)));
-    var unitText = hasVal ? (m.unit ? m.unit.toUpperCase() : '') : 'PX';
+    var unitText = hasVal ? (m.unit ? unitDisplayText(m.unit, m.value) : '') : 'PX';
     var tagText = m.label || '';
     var fsNum = Math.max(13, img.naturalWidth * 0.014);
     var fsTag = Math.max(10, img.naturalWidth * 0.0105);
