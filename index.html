@@ -10,8 +10,8 @@
 :root{
   --ink:#0e0e0f;--ink2:#4a4a55;--ink3:#8f8f9a;
   --bg:#f5f4f0;--surface:#fff;
-  --accent:#ff4d2e;--accent-light:#ff7350;
-  --accent2:#1a1aff;--accent2-light:#4d4dff;
+  --accent:#e8871e;--accent-light:#f5a83f;
+  --accent2:#0066cc;--accent2-light:#0077e6;
   --border:rgba(0,0,0,0.1);
   --panel:#18181d;--panel2:#232329;--panel3:#2f2f37;--panel-line:rgba(255,255,255,.07);
   --panel-text:#f0f0f4;--panel-muted:#8d8d99;
@@ -25,52 +25,52 @@
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--panel-line);position:sticky;top:0;z-index:100;box-shadow:0 12px 24px -12px rgba(0,0,0,.4)}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--panel-text);letter-spacing:-.5px;display:flex;align-items:center;gap:10px}
-.logo-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(255,77,46,.16),0 0 14px rgba(255,77,46,.55)}
+.logo-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(232,135,30,.16),0 0 14px rgba(232,135,30,.55)}
 .header-mode-badge{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:4px 12px;border-radius:20px;background:var(--panel3);color:var(--panel-text);transition:all .25s var(--ease)}
-.header-mode-badge.preview{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;box-shadow:0 0 0 3px rgba(26,26,255,.25),0 2px 12px rgba(26,26,255,.5);animation:preview-badge-pulse 1.6s ease-in-out infinite}
-@keyframes preview-badge-pulse{0%,100%{box-shadow:0 0 0 3px rgba(26,26,255,.25),0 2px 12px rgba(26,26,255,.5)}50%{box-shadow:0 0 0 7px rgba(26,26,255,.1),0 2px 18px rgba(26,26,255,.65)}}
+.header-mode-badge.preview{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;box-shadow:0 0 0 3px rgba(0,102,204,.25),0 2px 12px rgba(0,102,204,.5);animation:preview-badge-pulse 1.6s ease-in-out infinite}
+@keyframes preview-badge-pulse{0%,100%{box-shadow:0 0 0 3px rgba(0,102,204,.25),0 2px 12px rgba(0,102,204,.5)}50%{box-shadow:0 0 0 7px rgba(0,102,204,.1),0 2px 18px rgba(0,102,204,.65)}}
 .header-actions{display:flex;gap:8px;align-items:center}
 .btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:transform .18s var(--ease),box-shadow .18s var(--ease),opacity .18s var(--ease),background .18s var(--ease);display:inline-flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0) scale(.98)}
 .btn:focus-visible{outline:2px solid var(--accent2-light);outline-offset:2px}
-.btn-primary{background:linear-gradient(135deg,var(--accent-light),var(--accent));color:#fff;box-shadow:0 4px 16px rgba(255,77,46,.35)}
-.btn-primary:hover{box-shadow:0 6px 22px rgba(255,77,46,.45)}
+.btn-primary{background:linear-gradient(135deg,var(--accent-light),var(--accent));color:#fff;box-shadow:0 4px 16px rgba(232,135,30,.35)}
+.btn-primary:hover{box-shadow:0 6px 22px rgba(232,135,30,.45)}
 .btn-secondary{background:var(--panel2);color:var(--panel-text);border:1px solid var(--panel-line)}
 .btn-secondary:hover{background:var(--panel3)}
 .btn-ghost{background:transparent;color:var(--panel-muted);border:1px solid var(--panel3)}
 .btn-ghost:hover{color:var(--panel-text);border-color:var(--panel-muted);background:rgba(255,255,255,.03)}
-.btn-export{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;box-shadow:0 4px 16px rgba(26,26,255,.35)}
-.btn-export:hover{box-shadow:0 6px 22px rgba(26,26,255,.45)}
+.btn-export{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;box-shadow:0 4px 16px rgba(0,102,204,.35)}
+.btn-export:hover{box-shadow:0 6px 22px rgba(0,102,204,.45)}
 .btn-sm{padding:7px 13px;font-size:12px}
 .btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
 .app-body{flex:1;display:grid;grid-template-columns:1fr 320px;height:calc(100vh - 60px);overflow:hidden}
 .canvas-area{display:flex;flex-direction:column;background:radial-gradient(circle at 1px 1px,rgba(255,255,255,.05) 1px,transparent 0) 0 0/24px 24px,#16161a;overflow:hidden}
 .canvas-toolbar{background:rgba(24,24,29,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--panel-line);padding:10px 1.5rem;display:flex;align-items:center;gap:12px;flex-shrink:0;transition:background .25s var(--ease),border-color .25s var(--ease)}
-.canvas-toolbar.previewing{background:rgba(26,26,255,.1);border-bottom-color:rgba(26,26,255,.3)}
+.canvas-toolbar.previewing{background:rgba(0,102,204,.1);border-bottom-color:rgba(0,102,204,.3)}
 .toolbar-label{font-family:'Syne',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--panel-muted)}
 .mode-pill{background:var(--panel2);border:1px solid var(--panel-line);border-radius:20px;padding:3px;display:flex;gap:2px}
 .mode-btn{font-size:12px;font-weight:500;padding:6px 14px;border-radius:16px;border:none;background:transparent;color:var(--panel-muted);cursor:pointer;transition:all .2s var(--ease)}
-.mode-btn.active{background:linear-gradient(135deg,var(--accent-light),var(--accent));color:#fff;box-shadow:0 2px 10px rgba(255,77,46,.4)}
+.mode-btn.active{background:linear-gradient(135deg,var(--accent-light),var(--accent));color:#fff;box-shadow:0 2px 10px rgba(232,135,30,.4)}
 .canvas-viewport{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:2rem;cursor:crosshair;transition:box-shadow .25s var(--ease)}
-.canvas-viewport.view-mode{cursor:default;box-shadow:inset 0 0 0 3px rgba(26,26,255,.35)}
+.canvas-viewport.view-mode{cursor:default;box-shadow:inset 0 0 0 3px rgba(0,102,204,.35)}
 .canvas-viewport.drawing-active{touch-action:none}
 .canvas-viewport::-webkit-scrollbar{width:8px;height:8px}
 .canvas-viewport::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
 .image-canvas{position:relative;display:inline-block;line-height:0;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
 .canvas-img{display:block;max-width:100%;border-radius:var(--radius-lg);user-select:none;pointer-events:none}
 .upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;width:600px;max-width:90%;height:380px;border:2px dashed rgba(255,255,255,.14);border-radius:var(--radius-xl);background:rgba(255,255,255,.025);cursor:pointer;transition:all .25s var(--ease);text-align:center;padding:2rem}
-.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(255,77,46,.06);transform:translateY(-2px)}
-.upload-icon{width:64px;height:64px;background:linear-gradient(135deg,rgba(255,77,46,.2),rgba(255,77,46,.06));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;transition:transform .25s var(--ease)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(232,135,30,.06);transform:translateY(-2px)}
+.upload-icon{width:64px;height:64px;background:linear-gradient(135deg,rgba(232,135,30,.2),rgba(232,135,30,.06));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;transition:transform .25s var(--ease)}
 .upload-zone:hover .upload-icon{transform:scale(1.06) rotate(-3deg)}
 .upload-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--panel-text)}
 .upload-sub{font-size:14px;color:var(--panel-muted);line-height:1.6}
 .upload-types{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .type-tag{font-size:11px;font-weight:500;padding:3px 10px;background:rgba(255,255,255,.07);color:var(--panel-muted);border-radius:20px;border:1px solid rgba(255,255,255,.06)}
 .hotspot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:10;touch-action:none}
-.hotspot-pin{width:32px;height:32px;background:var(--accent);border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(255,77,46,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;transition:transform .2s var(--ease);position:relative}
+.hotspot-pin{width:32px;height:32px;background:var(--accent);border-radius:50%;border:3px solid #fff;box-shadow:0 4px 16px rgba(232,135,30,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;transition:transform .2s var(--ease);position:relative}
 .hotspot:hover .hotspot-pin{transform:scale(1.2)}
-.hotspot-pin::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(255,77,46,.4);animation:hs-pulse-default 2s ease-out infinite}
+.hotspot-pin::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(232,135,30,.4);animation:hs-pulse-default 2s ease-out infinite}
 @keyframes hs-pulse-default{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.6);opacity:0}}
 .canvas-viewport:not(.view-mode) .hotspot-pin{cursor:grab}
 .hotspot.dragging{z-index:50}
@@ -92,7 +92,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .hs-tooltip-audio{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:10px;padding:8px 10px}
 .hs-audio-play{width:28px;height:28px;background:var(--accent);border-radius:50%;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
 .hs-audio-label{font-size:12px;color:var(--ink2);font-weight:500}
-.hs-bh-btn{display:flex;align-items:center;justify-content:center;margin-top:10px;background:linear-gradient(135deg,#0077e6,#0058b8);color:#fff;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:opacity .15s var(--ease),transform .15s var(--ease)}
+.hs-bh-btn{display:flex;align-items:center;justify-content:center;margin-top:10px;background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:opacity .15s var(--ease),transform .15s var(--ease)}
 .hs-bh-btn:hover{opacity:.9;transform:translateY(-1px)}
 .side-panel{background:var(--panel);border-left:1px solid var(--panel-line);display:flex;flex-direction:column;overflow:hidden}
 .panel-header{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--panel-line);flex-shrink:0}
@@ -126,7 +126,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .hc-actions{display:flex;gap:4px}
 .hc-action-btn{width:26px;height:26px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--panel-muted);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s var(--ease)}
 .hc-action-btn:hover{background:rgba(255,255,255,.07);color:var(--panel-text)}
-.hc-action-btn.delete:hover{background:rgba(255,77,46,.15);color:var(--accent);border-color:rgba(255,77,46,.3)}
+.hc-action-btn.delete:hover{background:rgba(232,135,30,.15);color:var(--accent);border-color:rgba(232,135,30,.3)}
 .hc-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--panel-line);font-size:12px;color:var(--panel-muted);line-height:1.5}
 .hc-detail-text{color:var(--panel-text);margin-bottom:8px;word-wrap:break-word}
 .hc-detail-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -149,7 +149,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .tool-btn-icon{margin-right:5px}
 .preview-toggle{font-size:12px;font-weight:500;padding:6px 14px;border-radius:16px;border:1px solid var(--panel-line);background:var(--panel2);color:var(--panel-muted);cursor:pointer;transition:all .2s var(--ease);display:inline-flex;align-items:center;gap:6px;margin-left:6px}
 .preview-toggle:hover{color:var(--panel-text)}
-.preview-toggle.active{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(26,26,255,.4)}
+.preview-toggle.active{background:linear-gradient(135deg,var(--accent2-light),var(--accent2));color:#fff;border-color:transparent;box-shadow:0 2px 10px rgba(0,102,204,.4)}
 .zoom-control{display:flex;align-items:center;gap:8px;margin-left:6px;padding:6px 12px;background:var(--panel2);border:1px solid var(--panel-line);border-radius:16px}
 .zoom-icon{font-size:12px;opacity:.6;flex-shrink:0}
 .zoom-slider{-webkit-appearance:none;appearance:none;width:90px;height:4px;border-radius:2px;background:var(--panel3);outline:none;cursor:pointer;flex-shrink:0}
@@ -170,7 +170,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .panel-footer{padding:1rem 1.25rem;border-top:1px solid var(--panel-line);flex-shrink:0}
 .style-section-title{display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--panel-muted);margin-bottom:12px}
 .live-preview-pin{width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;position:relative;transition:background .2s var(--ease)}
-.live-preview-pin::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(255,77,46,.5);animation:preview-pulse 2s ease-out infinite}
+.live-preview-pin::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(232,135,30,.5);animation:preview-pulse 2s ease-out infinite}
 @keyframes preview-pulse{0%{transform:scale(.8);opacity:1}100%{transform:scale(1.7);opacity:0}}
 .preview-bounce{animation:prev-bounce .6s ease infinite alternate!important}
 @keyframes prev-bounce{from{transform:translateY(0)}to{transform:translateY(-5px)}}
@@ -192,7 +192,7 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .speed-control{display:flex;align-items:center;gap:8px}
 .speed-tag{font-size:10px;color:var(--panel-muted);white-space:nowrap}
 input[type=range]{-webkit-appearance:none;height:4px;background:var(--panel3);border-radius:2px;outline:none;cursor:pointer;flex:1}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(255,77,46,.5);border:2px solid #fff}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(232,135,30,.5);border:2px solid #fff}
 .modal-overlay{position:fixed;inset:0;background:rgba(8,8,10,.65);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(6px);animation:fade-in .18s ease}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 .modal{background:var(--surface);border-radius:var(--radius-xl);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;animation:slide-up .22s var(--ease);box-shadow:var(--shadow-lg)}
@@ -209,15 +209,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .form-group{margin-bottom:1.25rem}
 label{display:block;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:6px}
 input[type="text"],textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);transition:border-color .18s var(--ease),box-shadow .18s var(--ease);outline:none}
-input[type="text"]:focus,textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(26,26,255,.12)}
+input[type="text"]:focus,textarea:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(0,102,204,.12)}
 textarea{resize:vertical;min-height:90px;line-height:1.6}
 .char-count{text-align:right;font-size:12px;color:var(--ink3);margin-top:4px}
 .char-count.warn{color:var(--accent)}
 .section-divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
 .media-upload-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .media-type-btn{display:block;margin:0;border:1.5px dashed var(--border);border-radius:var(--radius-sm);padding:16px 8px;text-align:center;cursor:pointer;background:var(--bg);transition:all .18s var(--ease)}
-.media-type-btn:hover{border-color:var(--accent2);background:rgba(26,26,255,.03);transform:translateY(-1px)}
-.media-type-btn.has-file{border-style:solid;border-color:var(--accent2);background:rgba(26,26,255,.05)}
+.media-type-btn:hover{border-color:var(--accent2);background:rgba(0,102,204,.03);transform:translateY(-1px)}
+.media-type-btn.has-file{border-style:solid;border-color:var(--accent2);background:rgba(0,102,204,.05)}
 .media-type-icon{font-size:22px;margin-bottom:5px}
 .media-type-label{font-size:11px;font-weight:500;color:var(--ink2)}
 .media-preview{margin-top:12px}
@@ -246,14 +246,14 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 .export-tabs{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
 .export-tab{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--bg);cursor:pointer;text-align:left;transition:all .18s var(--ease);font-family:'DM Sans',sans-serif}
 .export-tab:hover{border-color:var(--accent2);transform:translateY(-1px)}
-.export-tab.active{border-color:var(--accent2);background:rgba(26,26,255,.06);box-shadow:0 4px 16px rgba(26,26,255,.12)}
+.export-tab.active{border-color:var(--accent2);background:rgba(0,102,204,.06);box-shadow:0 4px 16px rgba(0,102,204,.12)}
 .export-tab-icon{font-size:13px;font-weight:700;width:36px;height:36px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border);color:var(--ink2);font-family:monospace}
 .export-tab.active .export-tab-icon{border-color:var(--accent2);color:var(--accent2)}
 .export-tab-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px}
 .export-tab-desc{font-size:11px;color:var(--ink3)}
-.export-info-bar{background:rgba(26,26,255,.05);border:1px solid rgba(26,26,255,.15);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+.export-info-bar{background:rgba(0,102,204,.05);border:1px solid rgba(0,102,204,.15);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
 .export-info-icon{flex-shrink:0;color:var(--accent2);font-weight:600}
-.export-info-bar code{font-family:monospace;background:rgba(26,26,255,.1);padding:1px 5px;border-radius:4px;font-size:12px}
+.export-info-bar code{font-family:monospace;background:rgba(0,102,204,.1);padding:1px 5px;border-radius:4px;font-size:12px}
 
 /* ── MOBILE BOTTOM NAV ─────────────────────────────────────────────────────── */
 .mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(24,24,29,.96);backdrop-filter:blur(10px);border-top:1px solid var(--panel-line);z-index:200;padding:0 0 env(safe-area-inset-bottom,0);}
@@ -442,7 +442,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <div class="style-row">
           <div class="style-label">Color</div>
           <div class="color-swatches">
-            <div class="swatch active" style="background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
+            <div class="swatch active" style="background:#e8871e;" onclick="setHotspotColor('#e8871e',this)"></div>
             <div class="swatch" style="background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
             <div class="swatch" style="background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
             <div class="swatch" style="background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
@@ -480,7 +480,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <div class="style-label">Color</div>
           <div class="color-swatches">
             <div class="swatch active" style="background:#3b82f6;" onclick="setMeasureColor('#3b82f6',this)"></div>
-            <div class="swatch" style="background:#ff4d2e;" onclick="setMeasureColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#e8871e;" onclick="setMeasureColor('#e8871e',this)"></div>
             <div class="swatch" style="background:#22c55e;" onclick="setMeasureColor('#22c55e',this)"></div>
             <div class="swatch" style="background:#a855f7;" onclick="setMeasureColor('#a855f7',this)"></div>
             <div class="swatch" style="background:#f59e0b;" onclick="setMeasureColor('#f59e0b',this)"></div>
@@ -500,7 +500,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <div class="style-label">Color</div>
           <div class="color-swatches">
             <div class="swatch active" style="background:#a855f7;" onclick="setCalloutColor('#a855f7',this)"></div>
-            <div class="swatch" style="background:#ff4d2e;" onclick="setCalloutColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#e8871e;" onclick="setCalloutColor('#e8871e',this)"></div>
             <div class="swatch" style="background:#3b82f6;" onclick="setCalloutColor('#3b82f6',this)"></div>
             <div class="swatch" style="background:#22c55e;" onclick="setCalloutColor('#22c55e',this)"></div>
             <div class="swatch" style="background:#f59e0b;" onclick="setCalloutColor('#f59e0b',this)"></div>
@@ -520,7 +520,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <div class="style-label">Color</div>
           <div class="color-swatches">
             <div class="swatch active" style="background:#22c55e;" onclick="setHighlightColor('#22c55e',this)"></div>
-            <div class="swatch" style="background:#ff4d2e;" onclick="setHighlightColor('#ff4d2e',this)"></div>
+            <div class="swatch" style="background:#e8871e;" onclick="setHighlightColor('#e8871e',this)"></div>
             <div class="swatch" style="background:#3b82f6;" onclick="setHighlightColor('#3b82f6',this)"></div>
             <div class="swatch" style="background:#a855f7;" onclick="setHighlightColor('#a855f7',this)"></div>
             <div class="swatch" style="background:#f59e0b;" onclick="setHighlightColor('#f59e0b',this)"></div>
@@ -613,7 +613,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <div class="style-row">
         <div class="style-label">Color</div>
         <div class="color-swatches" style="gap:10px;">
-          <div class="swatch active" style="width:30px;height:30px;background:#ff4d2e;" onclick="setHotspotColor('#ff4d2e',this)"></div>
+          <div class="swatch active" style="width:30px;height:30px;background:#e8871e;" onclick="setHotspotColor('#e8871e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setHotspotColor('#3b82f6',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setHotspotColor('#22c55e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setHotspotColor('#a855f7',this)"></div>
@@ -651,7 +651,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <div class="style-label">Color</div>
         <div class="color-swatches" style="gap:10px;">
           <div class="swatch active" style="width:30px;height:30px;background:#3b82f6;" onclick="setMeasureColor('#3b82f6',this)"></div>
-          <div class="swatch" style="width:30px;height:30px;background:#ff4d2e;" onclick="setMeasureColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#e8871e;" onclick="setMeasureColor('#e8871e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setMeasureColor('#22c55e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setMeasureColor('#a855f7',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setMeasureColor('#f59e0b',this)"></div>
@@ -667,7 +667,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <div class="style-label">Color</div>
         <div class="color-swatches" style="gap:10px;">
           <div class="swatch active" style="width:30px;height:30px;background:#a855f7;" onclick="setCalloutColor('#a855f7',this)"></div>
-          <div class="swatch" style="width:30px;height:30px;background:#ff4d2e;" onclick="setCalloutColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#e8871e;" onclick="setCalloutColor('#e8871e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setCalloutColor('#3b82f6',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setCalloutColor('#22c55e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setCalloutColor('#f59e0b',this)"></div>
@@ -683,7 +683,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <div class="style-label">Color</div>
         <div class="color-swatches" style="gap:10px;">
           <div class="swatch active" style="width:30px;height:30px;background:#22c55e;" onclick="setHighlightColor('#22c55e',this)"></div>
-          <div class="swatch" style="width:30px;height:30px;background:#ff4d2e;" onclick="setHighlightColor('#ff4d2e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#e8871e;" onclick="setHighlightColor('#e8871e',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#3b82f6;" onclick="setHighlightColor('#3b82f6',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setHighlightColor('#a855f7',this)"></div>
           <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setHighlightColor('#f59e0b',this)"></div>
@@ -905,7 +905,7 @@ var pendingX = 0, pendingY = 0;
 var editingId = null;
 var currentMedia = null;
 var backgroundDataURL = null;
-var hsColor = '#ff4d2e';
+var hsColor = '#e8871e';
 var hsAnimation = 'pulse';
 var hsPulseSpeed = 2.0;
 var measureColor = '#3b82f6';
