@@ -232,6 +232,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
 .media-preview img{max-width:100%;border-radius:9px;display:block;max-height:150px}
 .media-preview video{max-width:100%;border-radius:9px;display:block;max-height:180px;background:#000}
 .media-preview .audio-info{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:9px;padding:10px 14px}
+.media-preview-error{background:rgba(255,77,46,.08);border:1px solid rgba(255,77,46,.25);color:var(--ink2);border-radius:9px;padding:10px 14px;font-size:13px;line-height:1.5}
 .media-preview .audio-icon{font-size:20px}
 .media-preview .audio-name{font-size:13px;color:var(--ink2)}
 .video-embed-wrap{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:9px;background:#000}
@@ -575,7 +576,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <span class="mobile-nav-tab-icon">&#127752;</span>
       Style
     </button>
-    <button class="mobile-nav-tab" id="mnav-export" onclick="mobileNavTo('export')" id="mnav-export-tab" disabled>
+    <button class="mobile-nav-tab" id="mnav-export" onclick="mobileNavTo('export')" disabled>
       <span class="mobile-nav-tab-icon">&#8659;</span>
       Export
     </button>
@@ -1223,8 +1224,11 @@ function useVideoUrl() {
   enableClearMediaBtn();
 }
 function handleMediaUpload(e, type) {
-  var file = e.target.files[0]; if (!file) return;
+  var file = e.target.files[0]; if (!file) { e.target.value = ''; return; }
   var reader = new FileReader();
+  reader.onerror = function() {
+    alert('Could not read that file. Please try a different one.');
+  };
   reader.onload = function(ev) {
     currentMedia = { type: type, dataURL: ev.target.result, name: file.name };
     if (type === 'video') currentMedia.source = 'file';
@@ -1234,14 +1238,18 @@ function handleMediaUpload(e, type) {
   };
   reader.readAsDataURL(file);
   e.target.value = '';
+  e.target.value = '';
+}
+function mediaPreviewFailed(kind) {
+  document.getElementById('media-preview').innerHTML = '<div class="media-preview-error">This ' + kind + ' could not be played — the format may not be supported by your browser.</div>';
 }
 function showMediaPreview(media) {
   var prev = document.getElementById('media-preview');
   prev.style.display = 'block';
   if (media.type === 'image') {
-    prev.innerHTML = '<img src="' + media.dataURL + '" alt="">';
+    prev.innerHTML = '<img src="' + media.dataURL + '" alt="" onerror="mediaPreviewFailed(\'image\')">';
   } else if (media.type === 'video') {
-    if (media.source === 'file') prev.innerHTML = '<video src="' + media.dataURL + '" controls playsinline></video>';
+    if (media.source === 'file') prev.innerHTML = '<video src="' + media.dataURL + '" controls playsinline onerror="mediaPreviewFailed(\'video\')"></video>';
     else prev.innerHTML = '<div class="video-embed-wrap"><iframe src="' + media.embedUrl + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>';
   } else {
     prev.innerHTML = '<div class="audio-info"><div class="audio-icon">&#127925;</div><div class="audio-name">' + escHTML(media.name) + '</div></div>';
@@ -1297,7 +1305,7 @@ function buildTooltipHTML(hs) {
     }
     else mediaHTML = '<div class="hs-tooltip-audio"><button class="hs-audio-play" onclick="toggleAudio(this,\'' + hs.id + '\')">&#9654;</button><span class="hs-audio-label">' + escHTML(hs.media.name) + '</span><audio id="hsa-' + hs.id + '" src="' + hs.media.dataURL + '"></audio></div>';
   }
-  var bhBtn = hs.bhId ? '<a class="hs-bh-btn" href="' + bhUrl(hs.bhId) + '" target="_blank" rel="noopener">See Details &#8599;</a>' : '';
+  var bhBtn = hs.bhId ? '<a class="hs-bh-btn" href="' + escHTML(bhUrl(hs.bhId)) + '" target="_blank" rel="noopener">See Details &#8599;</a>' : '';
   return '<div class="hs-tooltip"><div class="hs-tooltip-title">' + escHTML(hs.title) + '</div>' +
     (hs.text ? '<div class="hs-tooltip-text">' + escHTML(hs.text) + '</div>' : '') +
     mediaHTML + bhBtn + '</div>';
@@ -1569,6 +1577,7 @@ function updateDrawingActiveClass() {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
     var p = pctFromEvent(e);
+    if (tool === 'highlight') pendingHighlightShape = highlightShape;
     drawingState = { tool: tool, x1: p.x, y1: p.y, x2: p.x, y2: p.y, pointerId: e.pointerId };
     try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
     renderDrawingPreview();
@@ -1847,7 +1856,7 @@ function buildHotspotCardHTML(hs, i, mobile) {
       }
     }
     if (hasLink(hs)) {
-      detail += '<div class="hc-detail-row"><span class="hc-detail-icon">&#128279;</span><a class="hc-link" href="' + bhUrl(hs.bhId) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + escHTML(hs.bhId) + ' &#8599;</a></div>';
+      detail += '<div class="hc-detail-row"><span class="hc-detail-icon">&#128279;</span><a class="hc-link" href="' + escHTML(bhUrl(hs.bhId)) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' + escHTML(hs.bhId) + ' &#8599;</a></div>';
     }
     detail += '</div>';
   }
@@ -1914,7 +1923,9 @@ function resetTool() {
   if (any && !confirm('Reset everything?')) return;
   hotspots = []; measurements = []; callouts = []; highlights = [];
   backgroundDataURL = null;
-  document.getElementById('canvas-img').src = '';
+  var mainImg = document.getElementById('canvas-img');
+  mainImg.onerror = null; mainImg.onload = null;
+  mainImg.src = '';
   document.getElementById('image-canvas').style.display = 'none';
   document.getElementById('upload-zone').style.display = 'flex';
   resetZoom();
@@ -3119,24 +3130,13 @@ updateCounter = function() {
   renderMobileList();
 };
 
-// Mobile canvas: tap anywhere NOT on a hotspot to add (single tap, no long-press needed on small screens)
-// Provide a floating FAB button for adding hotspot on mobile
+// Mobile canvas: tap the empty upload zone to open the file picker.
+// Hotspot placement itself is already handled by handleCanvasClick() (bound via
+// onclick on #canvas-viewport), which runs for touch taps too — no need to duplicate it here.
 document.getElementById('canvas-viewport').addEventListener('click', function(e) {
   if (!isMobile) return;
   if (e.target.closest('.hotspot')) return;
-  if (!backgroundDataURL) {
-    document.getElementById('main-img-input').click();
-    return;
-  }
-  if (tool !== 'hotspot' || previewMode) return;
-  // Single tap to add on mobile
-  var img = document.getElementById('canvas-img');
-  var rect = img.getBoundingClientRect();
-  var xPct = ((e.clientX - rect.left) / rect.width) * 100;
-  var yPct = ((e.clientY - rect.top) / rect.height) * 100;
-  if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
-  pendingX = xPct; pendingY = yPct; editingId = null;
-  openModal();
+  if (!backgroundDataURL) document.getElementById('main-img-input').click();
 });
 
 </script>
