@@ -1000,19 +1000,32 @@ function handleDrop(e) {
   var file = e.dataTransfer.files[0];
   if (file && file.type.indexOf('image/') === 0) loadMainImage(file);
 }
-function handleMainImage(e) { var f = e.target.files[0]; if (f) loadMainImage(f); }
+function handleMainImage(e) {
+  var f = e.target.files[0];
+  if (f) loadMainImage(f);
+  e.target.value = '';
+}
 function loadMainImage(file) {
   var reader = new FileReader();
+  reader.onerror = function() {
+    alert('Could not read that file. Please try a different image.');
+  };
   reader.onload = function(ev) {
-    backgroundDataURL = ev.target.result;
     var img = document.getElementById('canvas-img');
-    img.onload = function() { redrawAllAnnotations(); };
+    img.onerror = function() {
+      img.onerror = null;
+      alert('This image could not be displayed — the format may not be supported by your browser. Try a JPEG, PNG, WebP, or GIF (HEIC/HEIF photos from iPhones often need converting first).');
+    };
+    img.onload = function() {
+      backgroundDataURL = ev.target.result;
+      document.getElementById('upload-zone').style.display = 'none';
+      document.getElementById('image-canvas').style.display = 'inline-block';
+      resetZoom();
+      updateToolbarHint();
+      document.getElementById('export-btn').disabled = false;
+      redrawAllAnnotations();
+    };
     img.src = ev.target.result;
-    document.getElementById('upload-zone').style.display = 'none';
-    document.getElementById('image-canvas').style.display = 'inline-block';
-    resetZoom();
-    updateToolbarHint();
-    document.getElementById('export-btn').disabled = false;
   };
   reader.readAsDataURL(file);
 }
