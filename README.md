@@ -51,5 +51,6 @@ Touch devices (phone or tablet) get tap/drag-based creation and tap-to-preview i
 - Pure HTML/CSS/vanilla JavaScript — no frameworks, no build tooling, no external runtime dependencies.
 - All uploaded images and media are embedded as base64 data URLs, so exported files are fully self-contained.
 - Measurement/callout geometry renders via an SVG overlay sized to the image's actual rendered pixel dimensions (not raw percentages), redrawn on resize, so lines and arrowheads never distort on non-square images.
+- The canvas area is a fixed-height viewport that scrolls internally when an image is taller than the window — the toolbar (and side panel) never scroll away, and the image stays reachable edge-to-edge (not clipped at the near side, a common flexbox-centering pitfall).
 - Fonts (Syne, DM Sans) are loaded from Google Fonts; everything else works offline.
 - The two brand accent colors (`--accent` gold/amber, `--accent2` blue, both defined in `:root`) are a best-effort approximation of B&H Photo Video's public brand identity — the primary blue matches the existing "See Details" product-link button color already used in this app. `bhphotovideo.com/a/design-system` returned a 403 (bot-protection block) with no accessible cached copy, so these aren't verified against B&H's actual design-system spec; swap the two CSS variables if you have the real tokens.
