@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// Backs the Hotspots iOS app. Project ids are unguessable UUIDs and the
+// Firestore project document (see firestore.rules) is the real ownership
+// boundary; these rules just require sign-in and cap file size.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /projects/{projectId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 15 * 1024 * 1024;
+    }
+  }
+}

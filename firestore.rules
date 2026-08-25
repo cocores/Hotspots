@@ -1,0 +1,38 @@
+rules_version = '2';
+
+// Backs the Hotspots iOS app (ios/). Every project is owned by the
+// Firebase Auth uid that created it (anonymous auth — see
+// ios/Hotspots/Services/AuthService.swift); ownership, not secrecy of the
+// project id, is what gates writes.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /projects/{projectId} {
+      allow read: if request.auth != null;
+
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && isValidProject(request.resource.data);
+
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid
+        && isValidProject(request.resource.data);
+
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+
+      function isValidProject(data) {
+        return data.name is string && data.name.size() > 0 && data.name.size() <= 120
+          && data.ownerId is string && data.ownerId.size() > 0
+          && data.imageURL is string && data.imageURL.size() > 0
+          && data.imageStoragePath is string && data.imageStoragePath.size() > 0
+          && data.imageWidth is number && data.imageWidth > 0
+          && data.imageHeight is number && data.imageHeight > 0
+          && data.style is map
+          && data.hotspots is list && data.hotspots.size() <= 200
+          && data.createdAt is number
+          && data.updatedAt is number;
+      }
+    }
+  }
+}
