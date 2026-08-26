@@ -1,0 +1,30 @@
+.editor-canvas {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0) 0 0/24px 24px,
+    #16161a;
+  border-radius: var(--radius-lg);
+  overflow: auto;
+  cursor: crosshair;
+  padding: 1.5rem;
+}
+
+.editor-canvas__frame {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.editor-canvas__image {
+  display: block;
+  max-width: 100%;
+  border-radius: var(--radius-lg);
+  user-select: none;
+  -webkit-user-drag: none;
+}

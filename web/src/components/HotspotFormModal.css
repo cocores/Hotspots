@@ -1,0 +1,32 @@
+.hs-form__media-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.hs-form__media {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.hs-form__media img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.hs-form__media-audio {
+  font-size: 13px;
+  color: var(--panel-text);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 8px 12px;
+  flex: 1;
+}
+
+.hs-form__uploading {
+  font-size: 13px;
+  color: var(--panel-muted);
+  margin-top: 6px;
+}

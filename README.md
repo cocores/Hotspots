@@ -11,5 +11,9 @@
   memory. See **[`ios/README.md`](ios/README.md)** for setup — it walks
   through registering a Firebase app, generating the Xcode project with
   XcodeGen, and what's still on you before an App Store submission.
+- **`web/`** — a React + Vite + TypeScript SPA port, same idea as `ios/`:
+  componentized instead of one HTML file, and backed by the same Firebase
+  project. See **[`web/README.md`](web/README.md)**.
 - **`firebase.json`, `firestore.rules`, `firestore.indexes.json`,
-  `storage.rules`** — the Firebase project config backing the iOS app.
+  `storage.rules`** — the Firebase project config backing both the iOS app
+  and the web SPA.

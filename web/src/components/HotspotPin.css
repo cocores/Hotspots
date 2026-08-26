@@ -1,0 +1,74 @@
+.hotspot-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  touch-action: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hotspot-pin__dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--hs-color);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--hs-color) 50%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  position: relative;
+  cursor: grab;
+}
+
+.hotspot-pin__dot--pulse::after,
+.hotspot-pin__dot--ripple::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--hs-color) 45%, transparent);
+}
+.hotspot-pin__dot--pulse::after {
+  animation: hs-pulse var(--hs-duration) ease-out infinite;
+}
+.hotspot-pin__dot--ripple::after {
+  animation: hs-ripple var(--hs-duration) linear infinite;
+}
+.hotspot-pin__dot--bounce {
+  animation: hs-bounce calc(var(--hs-duration) / 2) ease-in-out infinite alternate;
+}
+
+@keyframes hs-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes hs-ripple {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@keyframes hs-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
+  }
+}

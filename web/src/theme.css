@@ -1,0 +1,226 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --ink: #0e0e0f;
+  --ink2: #4a4a55;
+  --ink3: #8f8f9a;
+  --bg: #f5f4f0;
+  --surface: #fff;
+  --accent: #ff4d2e;
+  --accent-light: #ff7350;
+  --accent2: #1a1aff;
+  --accent2-light: #4d4dff;
+  --border: rgba(0, 0, 0, 0.1);
+  --panel: #18181d;
+  --panel2: #232329;
+  --panel3: #2f2f37;
+  --panel-line: rgba(255, 255, 255, 0.07);
+  --panel-text: #f0f0f4;
+  --panel-muted: #8d8d99;
+  --radius-xl: 22px;
+  --radius-lg: 16px;
+  --radius: 12px;
+  --radius-sm: 9px;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.5);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: "DM Sans", sans-serif;
+  background: var(--panel);
+  color: var(--panel-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+textarea {
+  font-family: inherit;
+}
+
+.btn {
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    opacity 0.18s var(--ease),
+    background 0.18s var(--ease);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-light), var(--accent));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 77, 46, 0.35);
+}
+.btn-secondary {
+  background: var(--panel2);
+  color: var(--panel-text);
+  border: 1px solid var(--panel-line);
+}
+.btn-secondary:hover {
+  background: var(--panel3);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--panel-muted);
+  border: 1px solid var(--panel3);
+}
+.btn-ghost:hover {
+  color: var(--panel-text);
+}
+.btn-sm {
+  padding: 7px 13px;
+  font-size: 12px;
+}
+
+.center-message {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 2rem;
+  color: var(--panel-muted);
+}
+.center-message h1 {
+  font-family: "Syne", sans-serif;
+  font-size: 20px;
+  color: var(--panel-text);
+}
+.center-message code {
+  background: var(--panel2);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+.visually-hidden {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  opacity: 0;
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 10, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  padding: 1rem;
+}
+.modal {
+  background: var(--panel2);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-xl);
+  width: 480px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.modal-header {
+  padding: 1.25rem 1.25rem 0;
+}
+.modal-title {
+  font-family: "Syne", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--panel-text);
+}
+.modal-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-footer {
+  padding: 0 1.25rem 1.25rem;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--panel-muted);
+  margin-bottom: 6px;
+}
+.form-error {
+  color: var(--accent-light);
+  font-size: 13px;
+}
+.dark-input {
+  width: 100%;
+  background: var(--panel);
+  border: 1.5px solid var(--panel-line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--panel-text);
+  outline: none;
+  transition:
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+.dark-input:focus {
+  border-color: var(--accent2-light);
+  box-shadow: 0 0 0 3px rgba(77, 77, 255, 0.18);
+}
+textarea.dark-input {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
