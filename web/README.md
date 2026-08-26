@@ -108,9 +108,38 @@ npm run build
 npm run preview
 ```
 
+## Deploy on Vercel
+
+`../vercel.json` (repo root) points a Vercel project at this subfolder:
+
+```json
+{
+  "installCommand": "npm install --prefix web",
+  "buildCommand": "npm run build --prefix web",
+  "outputDirectory": "web/dist"
+}
+```
+
+1. **Import the repo into Vercel** (New Project → this GitHub repo). Because
+   of `vercel.json`, Vercel builds `web/` even though the repo root also
+   has the standalone `index.html` tool — no per-project "Root Directory"
+   setting needed.
+2. **Project Settings → Environment Variables** — add the six
+   `VITE_FIREBASE_*` values (Production, and Preview/Development if you
+   want those environments live too), then redeploy. Vite bakes env vars
+   in at build time, so a deploy that predates adding them will still show
+   the "Firebase isn't configured" screen — you have to redeploy after.
+   These are meant to be public (they ship in the built JS bundle) —
+   Firestore/Storage Security Rules are what actually protect the data,
+   not secrecy of these values.
+3. Make sure the security rules are deployed to that Firebase project
+   (see "Point at a real Firebase project" above) — without them, Firestore
+   denies everything by default and the app will look broken even with
+   valid config.
+
 ## What's still on you
 
-- Hosting/deploying the built `dist/` somewhere (Vercel, Firebase Hosting,
-  Netlify, etc.) — not part of this pass.
+- Actually creating the Vercel project / connecting the GitHub repo — I
+  can't do that from here, only prepare the repo for it.
 - Export (HTML/embed/WebP) if you want the original tool's export feature
   carried over.
