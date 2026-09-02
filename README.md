@@ -17,7 +17,7 @@ Four annotation tools work together on the same image — pick one from the tool
 All four types coexist on one image, each with its own color (and, for highlights, shape/opacity) style controls, and are tracked together in a combined, grouped annotation list in the side panel.
 
 - **Upload an image** by dragging it in or tapping to browse (JPEG, PNG, WebP, GIF).
-- **Smart tooltips**: hotspot tooltips automatically reposition and flip so they never spill past the edges of the image.
+- **Smart tooltips**: hotspot tooltips automatically reposition and flip so they never spill past the edges of the image, and an open tooltip always stacks above every other hotspot pin, even ones placed nearby or overlapping it.
 - **Header badge**: the header shows the currently selected tool (Hotspot/Measure/Callout/Highlight), updating live as you switch tools.
 - **Zoom**: a draggable slider in the toolbar scales the display view down from 100% to 25% (in 25% steps), for a bird's-eye look at the full canvas. It's a display-only zoom — hotspots, measurements, callouts, and highlights all place, drag, and draw correctly at any zoom level. Always starts at 100% on a fresh upload or reset.
 - **Preview mode**: toggle to a read-only view with hover/tap-triggered hotspot tooltips and no editing. It's hard to miss — the header badge switches to a glowing, pulsing "Preview Mode" pill, the toolbar tints blue, and the canvas gets a blue ring around it, so you always know when you're looking at the read-only view versus editing.
