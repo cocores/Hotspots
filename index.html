@@ -148,6 +148,17 @@ header{background:linear-gradient(180deg,#1c1c22,#17171c);padding:0 1.75rem;heig
 .callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:var(--ink);font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:'DM Sans',sans-serif}
 .highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}
 .highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}
+.ann-banner{position:absolute;left:50%;transform:translate(-50%,-50%);width:92%;max-width:640px;text-align:center;background:rgba(255,255,255,.94);border-radius:12px;padding:14px 22px;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:7;box-sizing:border-box}
+.ann-banner-headline{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:.4px;line-height:1.15;word-break:break-word}
+.ann-banner-subtitle{font-size:13px;color:var(--ink2);margin-top:6px;font-weight:500;letter-spacing:.2px;font-family:'DM Sans',sans-serif}
+.dim-summary{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);display:flex;align-items:stretch;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.22);overflow:hidden;z-index:7;font-family:'DM Sans',sans-serif;max-width:90%}
+.dim-summary-title{background:#0b3d6b;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 16px;font-size:10px;line-height:1.5;font-weight:700;letter-spacing:.4px;text-align:center;gap:2px;white-space:nowrap;flex-shrink:0}
+.dim-summary-title span{font-size:16px;line-height:1}
+.dim-summary-row{display:flex;align-items:center;gap:8px;padding:10px 16px;border-left:1px solid #e5e7eb;flex-shrink:0}
+.dim-summary-icon{width:26px;height:26px;border-radius:50%;border:1.5px solid #0b3d6b;color:#0b3d6b;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;flex-shrink:0}
+.dim-summary-info{white-space:nowrap}
+.dim-summary-label{font-size:10px;line-height:1.4;font-weight:700;letter-spacing:.3px;color:#0b3d6b;text-transform:uppercase}
+.dim-summary-value{font-size:14px;line-height:1.4;font-weight:800;color:#111;margin-top:2px}
 .tool-btn-icon{margin-right:5px}
 .preview-toggle{font-size:12px;font-weight:500;padding:6px 14px;border-radius:16px;border:1px solid var(--panel-line);background:var(--panel2);color:var(--panel-muted);cursor:pointer;transition:all .2s var(--ease);display:inline-flex;align-items:center;gap:6px;margin-left:6px}
 .preview-toggle:hover{color:var(--panel-text)}
@@ -393,6 +404,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <button class="mode-btn" id="tool-measure" onclick="setTool('measure')" title="Measurements"><span class="tool-btn-icon">&#128207;</span><span class="tool-btn-label">Measure</span></button>
         <button class="mode-btn" id="tool-callout" onclick="setTool('callout')" title="Callouts"><span class="tool-btn-icon">&#9999;&#65039;</span><span class="tool-btn-label">Callout</span></button>
         <button class="mode-btn" id="tool-highlight" onclick="setTool('highlight')" title="Infographics / Highlights"><span class="tool-btn-icon">&#128444;&#65039;</span><span class="tool-btn-label">Highlight</span></button>
+        <button class="mode-btn" id="tool-banner" onclick="setTool('banner')" title="Title Banner"><span class="tool-btn-icon">Aa</span><span class="tool-btn-label">Banner</span></button>
       </div>
       <button class="preview-toggle" id="preview-toggle" onclick="togglePreview()" title="Preview">&#128065;<span class="preview-toggle-label"> Preview</span></button>
       <div class="zoom-control" id="zoom-control" title="Zoom the display view">
@@ -436,6 +448,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <div class="stat-box"><div class="stat-num" id="stat-callouts">0</div><div class="stat-label">Callouts</div></div>
         <div class="stat-divider"></div>
         <div class="stat-box"><div class="stat-num" id="stat-highlights">0</div><div class="stat-label">Highlights</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-box"><div class="stat-num" id="stat-banners">0</div><div class="stat-label">Banners</div></div>
       </div>
     </div>
     <div class="panel-body" id="hotspot-list">
@@ -504,7 +518,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
             </div>
           </div>
         </div>
-        <div class="style-row" style="margin-bottom:0;">
+        <div class="style-row">
           <div class="style-label">Line style</div>
           <div class="shape-toggle" id="measure-linestyle-toggle" style="margin-bottom:0;">
             <button type="button" class="active" onclick="setMeasureLineStyle('solid')">Solid</button>
@@ -512,6 +526,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
             <button type="button" onclick="setMeasureLineStyle('dotted')">Dotted</button>
           </div>
         </div>
+        <label class="ann-checkbox-row" style="margin-bottom:0;color:var(--panel-text);"><input type="checkbox" id="dim-summary-toggle" onchange="setShowDimensionSummary(this.checked)"> Show dimension summary card <span style="color:var(--panel-muted);font-weight:400;">(auto-built from measurements with a value)</span></label>
       </div>
 
       <div class="style-panel-section" id="style-callout" data-tool="callout">
@@ -568,6 +583,26 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           </div>
         </div>
       </div>
+
+      <div class="style-panel-section" id="style-banner" data-tool="banner">
+        <div class="style-section-title"><span>Banner Style</span></div>
+        <div class="style-row" style="margin-bottom:0;">
+          <div class="style-label">Color</div>
+          <div class="color-swatches">
+            <div class="swatch active" style="background:#0b3d6b;" onclick="setBannerColor('#0b3d6b',this)"></div>
+            <div class="swatch" style="background:#e8871e;" onclick="setBannerColor('#e8871e',this)"></div>
+            <div class="swatch" style="background:#22c55e;" onclick="setBannerColor('#22c55e',this)"></div>
+            <div class="swatch" style="background:#a855f7;" onclick="setBannerColor('#a855f7',this)"></div>
+            <div class="swatch" style="background:#f59e0b;" onclick="setBannerColor('#f59e0b',this)"></div>
+            <div class="swatch" style="background:#ec4899;" onclick="setBannerColor('#ec4899',this)"></div>
+            <div class="swatch" style="background:#0ea5e9;" onclick="setBannerColor('#0ea5e9',this)"></div>
+            <div class="swatch swatch-custom" id="swatch-custom-banner" onclick="document.getElementById('custom-color-input-banner').click()">
+              <span>+</span>
+              <input type="color" id="custom-color-input-banner" style="opacity:0;position:absolute;width:0;height:0;" oninput="setBannerColor(this.value,document.getElementById('swatch-custom-banner'))">
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -610,6 +645,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <div class="stat-box"><div class="stat-num" id="m-stat-callouts">0</div><div class="stat-label">Callouts</div></div>
       <div class="stat-divider"></div>
       <div class="stat-box"><div class="stat-num" id="m-stat-highlights">0</div><div class="stat-label">Highlights</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-box"><div class="stat-num" id="m-stat-banners">0</div><div class="stat-label">Banners</div></div>
     </div>
     <div id="mobile-hotspot-list">
       <div class="empty-state" style="padding:1.5rem 0;">
@@ -680,7 +717,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input-measure').click()"><span>+</span></div>
         </div>
       </div>
-      <div class="style-row" style="margin-bottom:0;margin-top:14px;">
+      <div class="style-row" style="margin-top:14px;">
         <div class="style-label">Line style</div>
         <div class="shape-toggle" id="m-measure-linestyle-toggle" style="margin-bottom:0;">
           <button type="button" class="active" style="padding:7px 11px;" onclick="setMeasureLineStyle('solid')">Solid</button>
@@ -688,6 +725,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <button type="button" style="padding:7px 11px;" onclick="setMeasureLineStyle('dotted')">Dotted</button>
         </div>
       </div>
+      <label class="ann-checkbox-row" style="margin-bottom:0;color:var(--panel-text);"><input type="checkbox" id="m-dim-summary-toggle" onchange="setShowDimensionSummary(this.checked)"> Show dimension summary card <span style="color:var(--panel-muted);font-weight:400;">(auto-built from measurements with a value)</span></label>
     </div>
 
     <div class="style-panel-section" id="m-style-callout" data-tool="callout">
@@ -733,6 +771,22 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <span class="speed-tag">Subtle</span>
           <input type="range" id="m-highlight-opacity" min="0.1" max="0.7" step="0.05" value="0.35" oninput="setHighlightOpacity(this.value);document.getElementById('highlight-opacity').value=this.value;">
           <span class="speed-tag">Bold</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="style-panel-section" id="m-style-banner" data-tool="banner">
+      <div class="style-row" style="margin-bottom:0;">
+        <div class="style-label">Color</div>
+        <div class="color-swatches" style="gap:10px;">
+          <div class="swatch active" style="width:30px;height:30px;background:#0b3d6b;" onclick="setBannerColor('#0b3d6b',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#e8871e;" onclick="setBannerColor('#e8871e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#22c55e;" onclick="setBannerColor('#22c55e',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#a855f7;" onclick="setBannerColor('#a855f7',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#f59e0b;" onclick="setBannerColor('#f59e0b',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#ec4899;" onclick="setBannerColor('#ec4899',this)"></div>
+          <div class="swatch" style="width:30px;height:30px;background:#0ea5e9;" onclick="setBannerColor('#0ea5e9',this)"></div>
+          <div class="swatch swatch-custom" style="width:30px;height:30px;" onclick="document.getElementById('custom-color-input-banner').click()"><span>+</span></div>
         </div>
       </div>
     </div>
@@ -847,6 +901,10 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
         <label for="ann-text" id="ann-text-label">Label <span style="color:var(--accent);">*</span></label>
         <input type="text" id="ann-text" placeholder="e.g. Fix alignment here" maxlength="120">
       </div>
+      <div class="form-group" id="ann-subtitle-group" style="display:none;">
+        <label for="ann-subtitle">Subtitle <span style="color:var(--ink3);font-weight:400;">(optional)</span></label>
+        <input type="text" id="ann-subtitle" placeholder="e.g. Strong Support &amp; Anti-Tip Design" maxlength="140">
+      </div>
       <div class="form-group" id="ann-value-group" style="display:none;">
         <label for="ann-value">Value <span style="color:var(--ink3);font-weight:400;">(optional, numbers only)</span></label>
         <input type="text" id="ann-value" inputmode="decimal" placeholder="e.g. 24" maxlength="20" oninput="sanitizeAnnValue(this)">
@@ -951,7 +1009,8 @@ var hotspots = [];
 var measurements = [];
 var callouts = [];
 var highlights = [];
-var tool = 'hotspot'; // 'hotspot' | 'measure' | 'callout' | 'highlight'
+var banners = [];
+var tool = 'hotspot'; // 'hotspot' | 'measure' | 'callout' | 'highlight' | 'banner'
 var previewMode = false;
 var pendingX = 0, pendingY = 0;
 var editingId = null;
@@ -966,6 +1025,8 @@ var calloutColor = '#a855f7';
 var highlightColor = '#22c55e';
 var highlightShape = 'rect';
 var highlightOpacity = 0.35;
+var bannerColor = '#0b3d6b';
+var showDimensionSummary = false;
 var exportTab = 'html';
 var imageFormat = 'webp';
 var zoomLevel = 100;
@@ -976,17 +1037,17 @@ function genAnnId() { return 'a' + (nextAnnId++); }
 
 function setTool(t) {
   tool = t;
-  ['hotspot', 'measure', 'callout', 'highlight'].forEach(function(x) {
+  ['hotspot', 'measure', 'callout', 'highlight', 'banner'].forEach(function(x) {
     var btn = document.getElementById('tool-' + x);
     if (btn) btn.classList.toggle('active', x === t);
   });
-  ['hotspot', 'measure', 'callout', 'highlight'].forEach(function(x) {
+  ['hotspot', 'measure', 'callout', 'highlight', 'banner'].forEach(function(x) {
     var sec = document.getElementById('style-' + x);
     if (sec) sec.classList.toggle('active', x === t);
     var msec = document.getElementById('m-style-' + x);
     if (msec) msec.classList.toggle('active', x === t);
   });
-  var titles = { hotspot: 'Hotspot Style', measure: 'Measurement Style', callout: 'Callout Style', highlight: 'Highlight Style' };
+  var titles = { hotspot: 'Hotspot Style', measure: 'Measurement Style', callout: 'Callout Style', highlight: 'Highlight Style', banner: 'Banner Style' };
   var mTitle = document.getElementById('m-style-sheet-title');
   if (mTitle) mTitle.textContent = titles[t];
   updateToolbarHint();
@@ -1001,7 +1062,7 @@ function updateHeaderBadge() {
     badge.textContent = '👁️ Preview Mode';
     badge.classList.add('preview');
   } else {
-    var names = { hotspot: 'Hotspot', measure: 'Measure', callout: 'Callout', highlight: 'Highlight' };
+    var names = { hotspot: 'Hotspot', measure: 'Measure', callout: 'Callout', highlight: 'Highlight', banner: 'Banner' };
     badge.textContent = names[tool] || '';
     badge.classList.remove('preview');
   }
@@ -1040,7 +1101,8 @@ function updateToolbarHint() {
     hotspot: verb + ' the image to place a hotspot',
     measure: dragVerb + ' to draw a measurement line',
     callout: dragVerb + ' to draw a callout arrow',
-    highlight: dragVerb + ' to draw a highlight zone'
+    highlight: dragVerb + ' to draw a highlight zone',
+    banner: verb + ' the image to place a title banner'
   }[tool];
   hintEl.textContent = text;
 }
@@ -1159,15 +1221,24 @@ function attachHotspotDrag(el, hs) {
 }
 
 function handleCanvasClick(e) {
-  if (previewMode || tool !== 'hotspot' || !backgroundDataURL) return;
-  if (e.target.closest('.hotspot')) return;
-  var img = document.getElementById('canvas-img');
-  var rect = img.getBoundingClientRect();
-  var xPct = ((e.clientX - rect.left) / rect.width) * 100;
-  var yPct = ((e.clientY - rect.top) / rect.height) * 100;
-  if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
-  pendingX = xPct; pendingY = yPct; editingId = null;
-  openModal();
+  if (previewMode || !backgroundDataURL) return;
+  if (tool === 'hotspot') {
+    if (e.target.closest('.hotspot')) return;
+    var img = document.getElementById('canvas-img');
+    var rect = img.getBoundingClientRect();
+    var xPct = ((e.clientX - rect.left) / rect.width) * 100;
+    var yPct = ((e.clientY - rect.top) / rect.height) * 100;
+    if (xPct < 0 || xPct > 100 || yPct < 0 || yPct > 100) return;
+    pendingX = xPct; pendingY = yPct; editingId = null;
+    openModal();
+  } else if (tool === 'banner') {
+    if (e.target.closest('.ann-banner')) return;
+    var bimg = document.getElementById('canvas-img');
+    var brect = bimg.getBoundingClientRect();
+    var byPct = ((e.clientY - brect.top) / brect.height) * 100;
+    if (byPct < 0 || byPct > 100) return;
+    openBannerModal(byPct);
+  }
 }
 
 function openModal() {
@@ -1457,15 +1528,14 @@ function createMeasurementEl(m) {
   var g = svgNS('g'); g.setAttribute('id', 'm-' + m.id);
   var x1 = pctToPx(m.x1, 'w'), y1 = pctToPx(m.y1, 'h'), x2 = pctToPx(m.x2, 'w'), y2 = pctToPx(m.y2, 'h');
   var ang = Math.atan2(y2 - y1, x2 - x1);
-  var tickLen = 8;
-  function tick(cx, cy) {
-    var tx = Math.cos(ang + Math.PI / 2) * tickLen, ty = Math.sin(ang + Math.PI / 2) * tickLen;
-    var l = svgNS('line');
-    l.setAttribute('x1', cx - tx); l.setAttribute('y1', cy - ty);
-    l.setAttribute('x2', cx + tx); l.setAttribute('y2', cy + ty);
-    l.setAttribute('stroke', m.color); l.setAttribute('stroke-width', '2');
-    l.setAttribute('vector-effect', 'non-scaling-stroke');
-    return l;
+  var headLen = 10;
+  function arrowHead(tipX, tipY, angle) {
+    var p1x = tipX - headLen * Math.cos(angle - Math.PI / 7), p1y = tipY - headLen * Math.sin(angle - Math.PI / 7);
+    var p2x = tipX - headLen * Math.cos(angle + Math.PI / 7), p2y = tipY - headLen * Math.sin(angle + Math.PI / 7);
+    var poly = svgNS('polygon');
+    poly.setAttribute('points', tipX + ',' + tipY + ' ' + p1x + ',' + p1y + ' ' + p2x + ',' + p2y);
+    poly.setAttribute('fill', m.color);
+    return poly;
   }
   var line = svgNS('line');
   line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
@@ -1477,8 +1547,8 @@ function createMeasurementEl(m) {
     if (m.lineStyle === 'dotted') line.setAttribute('stroke-linecap', 'round');
   }
   g.appendChild(line);
-  g.appendChild(tick(x1, y1));
-  g.appendChild(tick(x2, y2));
+  g.appendChild(arrowHead(x1, y1, ang + Math.PI));
+  g.appendChild(arrowHead(x2, y2, ang));
   svg.appendChild(g);
 
   var label = document.createElement('div');
@@ -1493,6 +1563,7 @@ function deleteMeasurement(id) {
   var g = document.getElementById('m-' + id); if (g) g.remove();
   var l = document.getElementById('ml-' + id); if (l) l.remove();
   renderList(); updateCounter();
+  renderDimensionSummary();
 }
 
 function createCalloutEl(c) {
@@ -1547,6 +1618,79 @@ function deleteHighlight(id) {
   highlights = highlights.filter(function(h) { return h.id !== id; });
   var el = document.getElementById('hl-' + id); if (el) el.remove();
   renderList(); updateCounter();
+}
+
+function createBannerEl(b) {
+  var div = document.createElement('div');
+  div.className = 'ann-banner'; div.id = 'bn-' + b.id;
+  div.style.top = b.y + '%';
+  var headline = document.createElement('div');
+  headline.className = 'ann-banner-headline'; headline.style.color = b.color;
+  headline.textContent = b.headline;
+  div.appendChild(headline);
+  if (b.subtitle) {
+    var sub = document.createElement('div');
+    sub.className = 'ann-banner-subtitle';
+    sub.textContent = '— ' + b.subtitle + ' —';
+    div.appendChild(sub);
+  }
+  document.getElementById('image-canvas').appendChild(div);
+}
+function deleteBanner(id) {
+  banners = banners.filter(function(b) { return b.id !== id; });
+  var el = document.getElementById('bn-' + id); if (el) el.remove();
+  renderList(); updateCounter();
+  renderDimensionSummary();
+}
+
+function dimensionIconFor(label) {
+  var l = (label || '').toLowerCase();
+  if (l.indexOf('width') !== -1) return '↔';
+  if (l.indexOf('height') !== -1) return '↕';
+  if (l.indexOf('length') !== -1) return '↗';
+  if (l.indexOf('depth') !== -1) return '↕';
+  return '⇄';
+}
+function dimensionSummaryRows() {
+  return measurements.filter(function(m) { return measureHasValue(m) && m.unit; });
+}
+function setShowDimensionSummary(checked) {
+  showDimensionSummary = checked;
+  var d1 = document.getElementById('dim-summary-toggle'); if (d1) d1.checked = checked;
+  var d2 = document.getElementById('m-dim-summary-toggle'); if (d2) d2.checked = checked;
+  renderDimensionSummary();
+}
+function renderDimensionSummary() {
+  var old = document.getElementById('dimension-summary'); if (old) old.remove();
+  if (!showDimensionSummary) return;
+  var rows = dimensionSummaryRows();
+  if (!rows.length) return;
+  var card = document.createElement('div');
+  card.className = 'dim-summary'; card.id = 'dimension-summary';
+  var title = document.createElement('div');
+  title.className = 'dim-summary-title';
+  title.innerHTML = '<span>&#128207;</span>PRODUCT<br>DIMENSIONS';
+  card.appendChild(title);
+  rows.forEach(function(m) {
+    var row = document.createElement('div');
+    row.className = 'dim-summary-row';
+    var icon = document.createElement('div');
+    icon.className = 'dim-summary-icon';
+    icon.textContent = dimensionIconFor(m.label);
+    row.appendChild(icon);
+    var info = document.createElement('div');
+    info.className = 'dim-summary-info';
+    var lbl = document.createElement('div');
+    lbl.className = 'dim-summary-label';
+    lbl.textContent = m.label || 'Size';
+    var val = document.createElement('div');
+    val.className = 'dim-summary-value';
+    val.textContent = m.value + ' ' + unitDisplayText(m.unit, m.value);
+    info.appendChild(lbl); info.appendChild(val);
+    row.appendChild(info);
+    card.appendChild(row);
+  });
+  document.getElementById('image-canvas').appendChild(card);
 }
 
 function redrawAllAnnotations() {
@@ -1633,13 +1777,13 @@ function finishDrawing() {
 
 function updateDrawingActiveClass() {
   var vp = document.getElementById('canvas-viewport');
-  if (vp) vp.classList.toggle('drawing-active', !previewMode && tool !== 'hotspot');
+  if (vp) vp.classList.toggle('drawing-active', !previewMode && tool !== 'hotspot' && tool !== 'banner');
 }
 
 (function initDrawingTools() {
   var viewport = document.getElementById('canvas-viewport');
   viewport.addEventListener('pointerdown', function(e) {
-    if (previewMode || tool === 'hotspot' || !backgroundDataURL) return;
+    if (previewMode || tool === 'hotspot' || tool === 'banner' || !backgroundDataURL) return;
     if (e.target.closest('.hotspot')) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
@@ -1669,6 +1813,7 @@ function updateDrawingActiveClass() {
 var annModalContext = null;
 var pendingAnnotation = null;
 var editingMeasurementId = null;
+var editingBannerId = null;
 var pendingAnnDimension = '';
 var pendingAnnWithStand = false;
 var pendingAnnWithLens = false;
@@ -1779,6 +1924,7 @@ function openMeasurementModal(x1, y1, x2, y2) {
   document.getElementById('ann-value-group').style.display = 'block';
   document.getElementById('ann-direction-group').style.display = 'block';
   document.getElementById('ann-linestyle-group').style.display = 'block';
+  document.getElementById('ann-subtitle-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1798,6 +1944,7 @@ function openCalloutModal(x1, y1, x2, y2) {
   document.getElementById('ann-value-group').style.display = 'none';
   document.getElementById('ann-direction-group').style.display = 'none';
   document.getElementById('ann-linestyle-group').style.display = 'none';
+  document.getElementById('ann-subtitle-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1818,6 +1965,51 @@ function openHighlightModal(x, y, w, h) {
   document.getElementById('ann-value-group').style.display = 'none';
   document.getElementById('ann-direction-group').style.display = 'none';
   document.getElementById('ann-linestyle-group').style.display = 'none';
+  document.getElementById('ann-subtitle-group').style.display = 'none';
+  document.getElementById('annotation-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
+}
+
+function openBannerModal(y) {
+  annModalContext = 'banner';
+  pendingAnnotation = { y: y };
+  document.getElementById('ann-modal-title').textContent = 'Add Title Banner';
+  document.getElementById('ann-modal-sub').textContent = 'Headline text overlay';
+  document.getElementById('ann-text-label').innerHTML = 'Headline <span style="color:var(--accent);">*</span>';
+  document.getElementById('ann-text').value = '';
+  document.getElementById('ann-text').style.borderColor = '';
+  document.getElementById('ann-text').placeholder = 'e.g. Robust Side Structure';
+  document.getElementById('ann-subtitle').value = '';
+  document.getElementById('ann-shape-group').style.display = 'none';
+  document.getElementById('ann-dim-group').style.display = 'none';
+  document.getElementById('ann-variant-group').style.display = 'none';
+  document.getElementById('ann-value-group').style.display = 'none';
+  document.getElementById('ann-direction-group').style.display = 'none';
+  document.getElementById('ann-linestyle-group').style.display = 'none';
+  document.getElementById('ann-subtitle-group').style.display = 'block';
+  document.getElementById('annotation-modal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
+}
+
+function openBannerEditModal(id) {
+  var b = banners.find(function(x) { return x.id === id; });
+  if (!b) return;
+  annModalContext = 'banner-edit';
+  editingBannerId = id;
+  document.getElementById('ann-modal-title').textContent = 'Edit Title Banner';
+  document.getElementById('ann-modal-sub').textContent = 'Headline text overlay';
+  document.getElementById('ann-text-label').innerHTML = 'Headline <span style="color:var(--accent);">*</span>';
+  document.getElementById('ann-text').value = b.headline || '';
+  document.getElementById('ann-text').style.borderColor = '';
+  document.getElementById('ann-text').placeholder = 'e.g. Robust Side Structure';
+  document.getElementById('ann-subtitle').value = b.subtitle || '';
+  document.getElementById('ann-shape-group').style.display = 'none';
+  document.getElementById('ann-dim-group').style.display = 'none';
+  document.getElementById('ann-variant-group').style.display = 'none';
+  document.getElementById('ann-value-group').style.display = 'none';
+  document.getElementById('ann-direction-group').style.display = 'none';
+  document.getElementById('ann-linestyle-group').style.display = 'none';
+  document.getElementById('ann-subtitle-group').style.display = 'block';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
@@ -1868,13 +2060,14 @@ function openMeasurementEditModal(id) {
   document.getElementById('ann-value-group').style.display = 'block';
   document.getElementById('ann-direction-group').style.display = 'block';
   document.getElementById('ann-linestyle-group').style.display = 'block';
+  document.getElementById('ann-subtitle-group').style.display = 'none';
   document.getElementById('annotation-modal').style.display = 'flex';
   setTimeout(function() { document.getElementById('ann-text').focus(); }, 100);
 }
 
 function closeAnnotationModal() {
   document.getElementById('annotation-modal').style.display = 'none';
-  annModalContext = null; pendingAnnotation = null; editingMeasurementId = null;
+  annModalContext = null; pendingAnnotation = null; editingMeasurementId = null; editingBannerId = null;
 }
 function closeAnnotationModalOnOverlay(e) { if (e.target === document.getElementById('annotation-modal')) closeAnnotationModal(); }
 
@@ -1903,9 +2096,24 @@ function saveAnnotationModal() {
       var lbl = document.getElementById('ml-' + em.id); if (lbl) lbl.remove();
       createMeasurementEl(em);
     }
+  } else if (annModalContext === 'banner') {
+    if (!text) { document.getElementById('ann-text').style.borderColor = '#ff4d2e'; document.getElementById('ann-text').focus(); return; }
+    var subtitle = document.getElementById('ann-subtitle').value.trim();
+    var bn = { id: genAnnId(), y: pendingAnnotation.y, headline: text, subtitle: subtitle, color: bannerColor };
+    banners.push(bn); createBannerEl(bn);
+  } else if (annModalContext === 'banner-edit') {
+    if (!text) { document.getElementById('ann-text').style.borderColor = '#ff4d2e'; document.getElementById('ann-text').focus(); return; }
+    var eb = banners.find(function(x) { return x.id === editingBannerId; });
+    if (eb) {
+      eb.headline = text;
+      eb.subtitle = document.getElementById('ann-subtitle').value.trim();
+      var bel = document.getElementById('bn-' + eb.id); if (bel) bel.remove();
+      createBannerEl(eb);
+    }
   }
   closeAnnotationModal();
   renderList(); updateCounter();
+  renderDimensionSummary();
 }
 
 function buildMeasurementCardHTML(m) {
@@ -1938,6 +2146,16 @@ function buildHighlightCardHTML(h) {
     + '<div class="hc-badges"><span class="hc-badge hc-badge-media">' + shapeLabel + '</span></div></div>'
     + '<div class="hc-actions">'
     + '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteHighlight(\'' + h.id + '\')">&#128465;</button>'
+    + '</div></div>';
+}
+function buildBannerCardHTML(b) {
+  return '<div class="hc-top">'
+    + '<div class="hc-num" style="background:' + b.color + '">Aa</div>'
+    + '<div class="hc-info"><div class="hc-title">' + escHTML(b.headline) + '</div>'
+    + '<div class="hc-badges">' + (b.subtitle ? '<span class="hc-badge hc-badge-text">Has subtitle</span>' : '<span class="hc-badge hc-badge-empty">No subtitle</span>') + '</div></div>'
+    + '<div class="hc-actions">'
+    + '<button class="hc-action-btn" onclick="event.stopPropagation();openBannerEditModal(\'' + b.id + '\')">&#9998;</button>'
+    + '<button class="hc-action-btn delete" onclick="event.stopPropagation();deleteBanner(\'' + b.id + '\')">&#128465;</button>'
     + '</div></div>';
 }
 
@@ -1989,7 +2207,7 @@ function buildHotspotCardHTML(hs, i, mobile) {
 var emptyStateHTML = document.getElementById('empty-state').outerHTML;
 
 function annotationCardsHTML(mobile) {
-  var total = hotspots.length + measurements.length + callouts.length + highlights.length;
+  var total = hotspots.length + measurements.length + callouts.length + highlights.length + banners.length;
   if (total === 0) return null;
   var cardOpen = mobile ? '<div class="hotspot-card" style="padding:12px 14px;margin-bottom:10px;">' : '<div class="hotspot-card">';
   var html = '';
@@ -2009,6 +2227,10 @@ function annotationCardsHTML(mobile) {
     html += '<div class="ann-section-label">Highlights</div>';
     highlights.forEach(function(h) { html += cardOpen + buildHighlightCardHTML(h) + '</div>'; });
   }
+  if (banners.length) {
+    html += '<div class="ann-section-label">Banners</div>';
+    banners.forEach(function(b) { html += cardOpen + buildBannerCardHTML(b) + '</div>'; });
+  }
   return html;
 }
 
@@ -2020,7 +2242,7 @@ function renderList() {
 function editHotspotFromList(id) { editingId = id; openModal(); }
 
 function updateCounter() {
-  var c = hotspots.length + measurements.length + callouts.length + highlights.length;
+  var c = hotspots.length + measurements.length + callouts.length + highlights.length + banners.length;
   var badge = document.getElementById('count-badge');
   badge.textContent = c;
   badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump');
@@ -2029,13 +2251,14 @@ function updateCounter() {
   document.getElementById('stat-measurements').textContent = measurements.length;
   document.getElementById('stat-callouts').textContent = callouts.length;
   document.getElementById('stat-highlights').textContent = highlights.length;
+  document.getElementById('stat-banners').textContent = banners.length;
   document.getElementById('export-btn').disabled = c === 0 || !backgroundDataURL;
 }
 
 function resetTool() {
-  var any = hotspots.length > 0 || measurements.length > 0 || callouts.length > 0 || highlights.length > 0 || backgroundDataURL;
+  var any = hotspots.length > 0 || measurements.length > 0 || callouts.length > 0 || highlights.length > 0 || banners.length > 0 || backgroundDataURL;
   if (any && !confirm('Reset everything?')) return;
-  hotspots = []; measurements = []; callouts = []; highlights = [];
+  hotspots = []; measurements = []; callouts = []; highlights = []; banners = [];
   backgroundDataURL = null;
   var mainImg = document.getElementById('canvas-img');
   mainImg.onerror = null; mainImg.onload = null;
@@ -2046,8 +2269,12 @@ function resetTool() {
   updateToolbarHint();
   document.getElementById('main-img-input').value = '';
   document.querySelectorAll('.hotspot').forEach(function(el) { el.remove(); });
-  document.querySelectorAll('.ann-label,.callout-label,.highlight-zone').forEach(function(el) { el.remove(); });
+  document.querySelectorAll('.ann-label,.callout-label,.highlight-zone,.ann-banner').forEach(function(el) { el.remove(); });
   var svg = document.getElementById('ann-svg'); if (svg) svg.innerHTML = '';
+  showDimensionSummary = false;
+  var d1 = document.getElementById('dim-summary-toggle'); if (d1) d1.checked = false;
+  var d2 = document.getElementById('m-dim-summary-toggle'); if (d2) d2.checked = false;
+  renderDimensionSummary();
   renderList(); updateCounter();
 }
 
@@ -2083,6 +2310,12 @@ function setHighlightColor(color, el) {
   document.querySelectorAll('#style-highlight .swatch, #m-style-highlight .swatch').forEach(function(s) { s.classList.remove('active'); });
   el.classList.add('active');
   if (el.id === 'swatch-custom-highlight') el.style.background = color;
+}
+function setBannerColor(color, el) {
+  bannerColor = color;
+  document.querySelectorAll('#style-banner .swatch, #m-style-banner .swatch').forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+  if (el.id === 'swatch-custom-banner') el.style.background = color;
 }
 function setHighlightShape(shape) {
   highlightShape = shape;
@@ -2155,7 +2388,9 @@ function annotationsDataForExport() {
   return JSON.stringify({
     measurements: measurements.map(function(m) { return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2, color: m.color, label: m.label || '', value: m.value || '', unit: m.unit || '', direction: m.direction === 'vertical' ? 'vertical' : 'horizontal', lineStyle: m.lineStyle || 'solid' }; }),
     callouts: callouts.map(function(c) { return { x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2, color: c.color, text: c.text }; }),
-    highlights: highlights.map(function(h) { return { x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' }; })
+    highlights: highlights.map(function(h) { return { x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' }; }),
+    banners: banners.map(function(b) { return { y: b.y, headline: b.headline, subtitle: b.subtitle || '', color: b.color }; }),
+    dimSummary: showDimensionSummary ? dimensionSummaryRows().map(function(m) { return { icon: dimensionIconFor(m.label), label: m.label || 'Size', value: m.value + ' ' + unitDisplayText(m.unit, m.value) }; }) : null
   });
 }
 
@@ -2238,7 +2473,18 @@ function generateExportHTML() {
     + '.ann-label.ann-label-vertical{transform:translate(-50%,-50%) rotate(-90deg)}\n'
     + '.callout-label{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
     + '.highlight-zone{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
-    + '.highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
+    + '.highlight-zone-label{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}\n'
+    + '.ann-banner{position:absolute;left:50%;transform:translate(-50%,-50%);width:92%;max-width:640px;text-align:center;background:rgba(255,255,255,.94);border-radius:12px;padding:14px 22px;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:7;box-sizing:border-box}\n'
+    + '.ann-banner-headline{font-weight:800;font-size:22px;letter-spacing:.4px;line-height:1.15;word-break:break-word}\n'
+    + '.ann-banner-subtitle{font-size:13px;color:#555;margin-top:6px;font-weight:500;letter-spacing:.2px}\n'
+    + '.dim-summary{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);display:flex;align-items:stretch;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.22);overflow:hidden;z-index:7;max-width:90%}\n'
+    + '.dim-summary-title{background:#0b3d6b;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 16px;font-size:10px;line-height:1.5;font-weight:700;letter-spacing:.4px;text-align:center;gap:2px;white-space:nowrap;flex-shrink:0}\n'
+    + '.dim-summary-title span{font-size:16px;line-height:1}\n'
+    + '.dim-summary-row{display:flex;align-items:center;gap:8px;padding:10px 16px;border-left:1px solid #e5e7eb;flex-shrink:0}\n'
+    + '.dim-summary-icon{width:26px;height:26px;border-radius:50%;border:1.5px solid #0b3d6b;color:#0b3d6b;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;flex-shrink:0}\n'
+    + '.dim-summary-info{white-space:nowrap}\n'
+    + '.dim-summary-label{font-size:10px;line-height:1.4;font-weight:700;letter-spacing:.3px;color:#0b3d6b;text-transform:uppercase}\n'
+    + '.dim-summary-value{font-size:14px;line-height:1.4;font-weight:800;color:#111;margin-top:2px}';
 
   // Build JS using createElement to avoid any HTML escaping issues
   var js = ''
@@ -2317,11 +2563,11 @@ function generateExportHTML() {
     + 'function drawMeasurements(){\n'
     + '  annData.measurements.forEach(function(m){\n'
     + '    var x1=pctToPxImg(m.x1,"w"),y1=pctToPxImg(m.y1,"h"),x2=pctToPxImg(m.x2,"w"),y2=pctToPxImg(m.y2,"h");\n'
-    + '    var ang=Math.atan2(y2-y1,x2-x1),tickLen=8;\n'
-    + '    function tick(cx,cy){var tx=Math.cos(ang+Math.PI/2)*tickLen,ty=Math.sin(ang+Math.PI/2)*tickLen;var l=svgEl2("line");l.setAttribute("x1",cx-tx);l.setAttribute("y1",cy-ty);l.setAttribute("x2",cx+tx);l.setAttribute("y2",cy+ty);l.setAttribute("stroke",m.color);l.setAttribute("stroke-width","2");l.setAttribute("vector-effect","non-scaling-stroke");return l;}\n'
+    + '    var ang=Math.atan2(y2-y1,x2-x1),headLen=10;\n'
+    + '    function tick(tipX,tipY,angle){var p1x=tipX-headLen*Math.cos(angle-Math.PI/7),p1y=tipY-headLen*Math.sin(angle-Math.PI/7),p2x=tipX-headLen*Math.cos(angle+Math.PI/7),p2y=tipY-headLen*Math.sin(angle+Math.PI/7);var pg=svgEl2("polygon");pg.setAttribute("points",tipX+","+tipY+" "+p1x+","+p1y+" "+p2x+","+p2y);pg.setAttribute("fill",m.color);return pg;}\n'
     + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
     + '    if(m.lineStyle==="dashed"){line.setAttribute("stroke-dasharray","10,6");}else if(m.lineStyle==="dotted"){line.setAttribute("stroke-dasharray","1,6");line.setAttribute("stroke-linecap","round");}\n'
-    + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
+    + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1,ang+Math.PI));annSvg.appendChild(tick(x2,y2,ang));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
     + '    var lbl=document.createElement("div");lbl.className="ann-label"+(m.direction==="vertical"?" ann-label-vertical":"");lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
     + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
@@ -2353,12 +2599,34 @@ function generateExportHTML() {
     + '    document.getElementById("c").appendChild(div);\n'
     + '  });\n'
     + '}\n'
+    + 'function drawBanners(){\n'
+    + '  (annData.banners||[]).forEach(function(bn){\n'
+    + '    var div=document.createElement("div");div.className="ann-banner";div.style.top=bn.y+"%";\n'
+    + '    var h=document.createElement("div");h.className="ann-banner-headline";h.style.color=bn.color;h.textContent=bn.headline;div.appendChild(h);\n'
+    + '    if(bn.subtitle){var s=document.createElement("div");s.className="ann-banner-subtitle";s.textContent="— "+bn.subtitle+" —";div.appendChild(s);}\n'
+    + '    document.getElementById("c").appendChild(div);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function drawDimSummary(){\n'
+    + '  if(!annData.dimSummary||!annData.dimSummary.length)return;\n'
+    + '  var card=document.createElement("div");card.className="dim-summary";\n'
+    + '  var title=document.createElement("div");title.className="dim-summary-title";title.innerHTML="<span>&#128207;</span>PRODUCT<br>DIMENSIONS";card.appendChild(title);\n'
+    + '  annData.dimSummary.forEach(function(r){\n'
+    + '    var row=document.createElement("div");row.className="dim-summary-row";\n'
+    + '    var icon=document.createElement("div");icon.className="dim-summary-icon";icon.textContent=r.icon;row.appendChild(icon);\n'
+    + '    var info=document.createElement("div");info.className="dim-summary-info";\n'
+    + '    var lbl=document.createElement("div");lbl.className="dim-summary-label";lbl.textContent=r.label;\n'
+    + '    var val=document.createElement("div");val.className="dim-summary-value";val.textContent=r.value;\n'
+    + '    info.appendChild(lbl);info.appendChild(val);row.appendChild(info);card.appendChild(row);\n'
+    + '  });\n'
+    + '  document.getElementById("c").appendChild(card);\n'
+    + '}\n'
     + 'function redrawAnn(){\n'
     + '  annSvg.innerHTML="";\n'
-    + '  Array.prototype.slice.call(document.querySelectorAll(".ann-label,.callout-label,.highlight-zone")).forEach(function(e){e.remove();});\n'
+    + '  Array.prototype.slice.call(document.querySelectorAll(".ann-label,.callout-label,.highlight-zone,.ann-banner,.dim-summary")).forEach(function(e){e.remove();});\n'
     + '  if(!mainImg.clientWidth)return;\n'
     + '  annSvg.setAttribute("viewBox","0 0 "+mainImg.clientWidth+" "+mainImg.clientHeight);\n'
-    + '  drawMeasurements(); drawCallouts(); drawHighlights();\n'
+    + '  drawMeasurements(); drawCallouts(); drawHighlights(); drawBanners(); drawDimSummary();\n'
     + '}\n'
     + 'if(mainImg.complete&&mainImg.naturalWidth)redrawAnn();else mainImg.onload=redrawAnn;\n'
     + 'window.addEventListener("resize",redrawAnn);\n'
@@ -2445,7 +2713,18 @@ function generateEmbedCode() {
     + '.' + p + 'lbl.' + p + 'lblv{transform:translate(-50%,-50%) rotate(-90deg)}\n'
     + '.' + p + 'clbl{position:absolute;transform:translate(-50%,calc(-100% - 12px));background:#fff;color:#111;font-size:12px;font-weight:600;padding:6px 11px;border-radius:9px;box-shadow:0 10px 24px rgba(0,0,0,.28);pointer-events:none;z-index:6;max-width:200px;white-space:normal;line-height:1.4;font-family:system-ui,sans-serif}\n'
     + '.' + p + 'hlz{position:absolute;pointer-events:none;z-index:4;box-sizing:border-box}\n'
-    + '.' + p + 'hlbl{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}';
+    + '.' + p + 'hlbl{position:absolute;top:6px;left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;color:#fff;font-family:system-ui,sans-serif;white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}\n'
+    + '.' + p + 'bn{position:absolute;left:50%;transform:translate(-50%,-50%);width:92%;max-width:640px;text-align:center;background:rgba(255,255,255,.94);border-radius:12px;padding:14px 22px;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:7;box-sizing:border-box}\n'
+    + '.' + p + 'bnh{font-weight:800;font-size:22px;letter-spacing:.4px;line-height:1.15;word-break:break-word}\n'
+    + '.' + p + 'bns{font-size:13px;color:#555;margin-top:6px;font-weight:500;letter-spacing:.2px}\n'
+    + '.' + p + 'ds{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);display:flex;align-items:stretch;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.22);overflow:hidden;z-index:7;max-width:90%}\n'
+    + '.' + p + 'dst{background:#0b3d6b;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 16px;font-size:10px;line-height:1.5;font-weight:700;letter-spacing:.4px;text-align:center;gap:2px;white-space:nowrap;flex-shrink:0}\n'
+    + '.' + p + 'dst span{font-size:16px;line-height:1}\n'
+    + '.' + p + 'dsr{display:flex;align-items:center;gap:8px;padding:10px 16px;border-left:1px solid #e5e7eb;flex-shrink:0}\n'
+    + '.' + p + 'dsi{width:26px;height:26px;border-radius:50%;border:1.5px solid #0b3d6b;color:#0b3d6b;display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;flex-shrink:0}\n'
+    + '.' + p + 'dsf{white-space:nowrap}\n'
+    + '.' + p + 'dsl{font-size:10px;line-height:1.4;font-weight:700;letter-spacing:.3px;color:#0b3d6b;text-transform:uppercase}\n'
+    + '.' + p + 'dsv{font-size:14px;line-height:1.4;font-weight:800;color:#111;margin-top:2px}';
 
   var js = ''
     + '(function(){\n'
@@ -2521,11 +2800,11 @@ function generateEmbedCode() {
     + 'function drawMeasurements(){\n'
     + '  annData.measurements.forEach(function(m){\n'
     + '    var x1=pctToPxImg(m.x1,"w"),y1=pctToPxImg(m.y1,"h"),x2=pctToPxImg(m.x2,"w"),y2=pctToPxImg(m.y2,"h");\n'
-    + '    var ang=Math.atan2(y2-y1,x2-x1),tickLen=8;\n'
-    + '    function tick(cx,cy){var tx=Math.cos(ang+Math.PI/2)*tickLen,ty=Math.sin(ang+Math.PI/2)*tickLen;var l=svgEl2("line");l.setAttribute("x1",cx-tx);l.setAttribute("y1",cy-ty);l.setAttribute("x2",cx+tx);l.setAttribute("y2",cy+ty);l.setAttribute("stroke",m.color);l.setAttribute("stroke-width","2");l.setAttribute("vector-effect","non-scaling-stroke");return l;}\n'
+    + '    var ang=Math.atan2(y2-y1,x2-x1),headLen=10;\n'
+    + '    function tick(tipX,tipY,angle){var p1x=tipX-headLen*Math.cos(angle-Math.PI/7),p1y=tipY-headLen*Math.sin(angle-Math.PI/7),p2x=tipX-headLen*Math.cos(angle+Math.PI/7),p2y=tipY-headLen*Math.sin(angle+Math.PI/7);var pg=svgEl2("polygon");pg.setAttribute("points",tipX+","+tipY+" "+p1x+","+p1y+" "+p2x+","+p2y);pg.setAttribute("fill",m.color);return pg;}\n'
     + '    var line=svgEl2("line");line.setAttribute("x1",x1);line.setAttribute("y1",y1);line.setAttribute("x2",x2);line.setAttribute("y2",y2);line.setAttribute("stroke",m.color);line.setAttribute("stroke-width","2");line.setAttribute("vector-effect","non-scaling-stroke");\n'
     + '    if(m.lineStyle==="dashed"){line.setAttribute("stroke-dasharray","10,6");}else if(m.lineStyle==="dotted"){line.setAttribute("stroke-dasharray","1,6");line.setAttribute("stroke-linecap","round");}\n'
-    + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1));annSvg.appendChild(tick(x2,y2));\n'
+    + '    annSvg.appendChild(line);annSvg.appendChild(tick(x1,y1,ang+Math.PI));annSvg.appendChild(tick(x2,y2,ang));\n'
     + '    var dx=(m.x2-m.x1)/100*mainImg.naturalWidth,dy=(m.y2-m.y1)/100*mainImg.naturalHeight;\n'
     + '    var lbl=document.createElement("div");lbl.className="' + p + 'lbl"+(m.direction==="vertical"?" ' + p + 'lblv":"");lbl.style.left=((m.x1+m.x2)/2)+"%";lbl.style.top=((m.y1+m.y2)/2)+"%";lbl.style.borderLeftColor=m.color;\n'
     + '    var hasVal=m.value!==undefined&&m.value!==null&&m.value!=="";\n'
@@ -2557,12 +2836,34 @@ function generateEmbedCode() {
     + '    w.appendChild(div);\n'
     + '  });\n'
     + '}\n'
+    + 'function drawBanners(){\n'
+    + '  (annData.banners||[]).forEach(function(bn){\n'
+    + '    var div=document.createElement("div");div.className="' + p + 'bn";div.style.top=bn.y+"%";\n'
+    + '    var h=document.createElement("div");h.className="' + p + 'bnh";h.style.color=bn.color;h.textContent=bn.headline;div.appendChild(h);\n'
+    + '    if(bn.subtitle){var s=document.createElement("div");s.className="' + p + 'bns";s.textContent="— "+bn.subtitle+" —";div.appendChild(s);}\n'
+    + '    w.appendChild(div);\n'
+    + '  });\n'
+    + '}\n'
+    + 'function drawDimSummary(){\n'
+    + '  if(!annData.dimSummary||!annData.dimSummary.length)return;\n'
+    + '  var card=document.createElement("div");card.className="' + p + 'ds";\n'
+    + '  var title=document.createElement("div");title.className="' + p + 'dst";title.innerHTML="<span>&#128207;</span>PRODUCT<br>DIMENSIONS";card.appendChild(title);\n'
+    + '  annData.dimSummary.forEach(function(r){\n'
+    + '    var row=document.createElement("div");row.className="' + p + 'dsr";\n'
+    + '    var icon=document.createElement("div");icon.className="' + p + 'dsi";icon.textContent=r.icon;row.appendChild(icon);\n'
+    + '    var info=document.createElement("div");info.className="' + p + 'dsf";\n'
+    + '    var lbl=document.createElement("div");lbl.className="' + p + 'dsl";lbl.textContent=r.label;\n'
+    + '    var val=document.createElement("div");val.className="' + p + 'dsv";val.textContent=r.value;\n'
+    + '    info.appendChild(lbl);info.appendChild(val);row.appendChild(info);card.appendChild(row);\n'
+    + '  });\n'
+    + '  w.appendChild(card);\n'
+    + '}\n'
     + 'function redrawAnn(){\n'
     + '  annSvg.innerHTML="";\n'
-    + '  Array.prototype.slice.call(w.querySelectorAll(".' + p + 'lbl,.' + p + 'clbl,.' + p + 'hlz")).forEach(function(e){e.remove();});\n'
+    + '  Array.prototype.slice.call(w.querySelectorAll(".' + p + 'lbl,.' + p + 'clbl,.' + p + 'hlz,.' + p + 'bn,.' + p + 'ds")).forEach(function(e){e.remove();});\n'
     + '  if(!mainImg.clientWidth)return;\n'
     + '  annSvg.setAttribute("viewBox","0 0 "+mainImg.clientWidth+" "+mainImg.clientHeight);\n'
-    + '  drawMeasurements(); drawCallouts(); drawHighlights();\n'
+    + '  drawMeasurements(); drawCallouts(); drawHighlights(); drawBanners(); drawDimSummary();\n'
     + '}\n'
     + 'if(mainImg.complete&&mainImg.naturalWidth)redrawAnn();else mainImg.onload=redrawAnn;\n'
     + 'window.addEventListener("resize",redrawAnn);\n'
@@ -2753,11 +3054,17 @@ function generateClaudeCodeExport() {
   var highlightSummary = highlights.map(function(h, i) {
     return { index: i + 1, x: h.x, y: h.y, w: h.w, h: h.h, shape: h.shape, color: h.color, opacity: h.opacity, text: h.text || '' };
   });
+  var bannerSummary = banners.map(function(b, i) {
+    return { index: i + 1, y: b.y, headline: b.headline, subtitle: b.subtitle || '', color: b.color };
+  });
+  var dimSummaryRows = showDimensionSummary ? dimensionSummaryRows().map(function(m) {
+    return { icon: dimensionIconFor(m.label), label: m.label || 'Size', value: m.value + ' ' + unitDisplayText(m.unit, m.value) };
+  }) : [];
   var annJSON = annotationsDataForExport();
-  var hasAnyExtra = measurements.length || callouts.length || highlights.length;
+  var hasAnyExtra = measurements.length || callouts.length || highlights.length || banners.length;
 
   var prompt = '# Annotated Image Project — Claude Code Transfer\n\n'
-    + 'I built an annotated image in Annotation Tool (hotspots, measurements, callouts, and highlight zones) and want you to implement it as a production-ready project.\n\n'
+    + 'I built an annotated image in Annotation Tool (hotspots, measurements, callouts, highlight zones, and title banners) and want you to implement it as a production-ready project.\n\n'
     + '## Project Data\n\n'
     + '### Background Image\n'
     + 'The background image is embedded as a base64 data URL. '
@@ -2774,6 +3081,9 @@ function generateClaudeCodeExport() {
     + '```json\n' + JSON.stringify(calloutSummary, null, 2) + '\n```\n\n'
     + '**Highlight zones (' + highlights.length + ' total)** — rectangle/ellipse overlays:\n'
     + '```json\n' + JSON.stringify(highlightSummary, null, 2) + '\n```\n\n'
+    + '**Title banners (' + banners.length + ' total)** — headline text overlays:\n'
+    + '```json\n' + JSON.stringify(bannerSummary, null, 2) + '\n```\n\n'
+    + (showDimensionSummary ? '**Dimension summary card** — enabled, pre-computed rows (icon/label/value already resolved, no further aggregation needed):\n```json\n' + JSON.stringify(dimSummaryRows, null, 2) + '\n```\n\n' : '**Dimension summary card** — not enabled for this project.\n\n')
     + '## What to Build\n\n'
     + 'Create a self-contained annotated-image component with these requirements:\n\n'
     + '### Core Features\n'
@@ -2805,11 +3115,14 @@ function generateClaudeCodeExport() {
         ? 'Bounce: pin translates Y from 0 to -6px, duration ' + (1/hsPulseSpeed).toFixed(2) + 's, ease-in-out, infinite alternate. No ring.\n\n'
       : 'No animation on pins.\n\n')
     + '### Measurements\n'
-    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with small perpendicular tick marks at both ends (like a ruler), plus a floating chip label at the midpoint. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"`, `"cm"`, or `"ft"` — a small colored pill badge with "IN", "CM", or "FOOT"/"FEET" (colored using the measurement\'s own `color`). For `"ft"`, singularize the badge to "FOOT" when `value` is exactly `1`, otherwise "FEET" (e.g. value `"1"` → "FOOT", value `"3"` → "FEET"); `"in"`/`"cm"` never pluralize. If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. If `direction` is `"vertical"`, rotate the whole chip -90 degrees around its own center (so the text reads bottom-to-top) — CSS: `transform: translate(-50%,-50%) rotate(-90deg)` in place of the default `translate(-50%,-50%)`; the ruler line itself is never rotated, only the chip. `lineStyle` is `"solid"`, `"dashed"`, or `"dotted"` — apply it to the ruler line (not the tick marks, which stay solid): for `"dashed"` use a stroke-dasharray of roughly `10,6`; for `"dotted"` use a short dash with a round line cap (e.g. dasharray `1,6`, `stroke-linecap: round`) so it renders as evenly-spaced dots. Render the line/ticks as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the lines.\n\n'
+    + 'Each measurement is a line between two percentage-based points (`from`/`to`), drawn with a solid triangular arrowhead at BOTH ends pointing outward (away from the line\'s center, like a technical/architectural dimension line — not inward-pointing like a regular arrow), plus a floating chip label at the midpoint. Compute each arrowhead the same way as a callout\'s (see below), but anchor one at `from` aimed at the line\'s angle plus 180°, and the other at `to` aimed at the line\'s raw angle — so they point away from each other. If `value` is a non-empty string, the chip shows (left to right): the optional `label` in small muted text (e.g. "Width with stand"), the `value` in bold, and — if `unit` is `"in"`, `"cm"`, or `"ft"` — a small colored pill badge with "IN", "CM", or "FOOT"/"FEET" (colored using the measurement\'s own `color`). For `"ft"`, singularize the badge to "FOOT" when `value` is exactly `1`, otherwise "FEET" (e.g. value `"1"` → "FOOT", value `"3"` → "FEET"); `"in"`/`"cm"` never pluralize. If `value` is empty, fall back to `distancePx` + a "PX" badge instead (already computed from the source image\'s natural pixel dimensions, so it stays accurate regardless of display size). Style the chip as a white rounded pill with a thin left accent bar in the measurement\'s `color`, subtle drop shadow, label muted small, value bold, unit as a small colored badge — e.g. a chip reading "Width with stand" · "24.5" · "IN" badge. If `direction` is `"vertical"`, rotate the whole chip -90 degrees around its own center (so the text reads bottom-to-top) — CSS: `transform: translate(-50%,-50%) rotate(-90deg)` in place of the default `translate(-50%,-50%)`; the ruler line itself is never rotated, only the chip. `lineStyle` is `"solid"`, `"dashed"`, or `"dotted"` — apply it to the ruler line only (the arrowheads always stay solid-filled): for `"dashed"` use a stroke-dasharray of roughly `10,6`; for `"dotted"` use a short dash with a round line cap (e.g. dasharray `1,6`, `stroke-linecap: round`) so it renders as evenly-spaced dots. Render the line/arrowheads as an SVG overlay sized to the image\'s current rendered dimensions (recompute on resize so the geometry never distorts for non-square images) — use `vector-effect="non-scaling-stroke"` on the line (not needed on the arrowhead polygons, which have no stroke).\n\n'
     + '### Callouts\n'
     + 'Each callout is an arrow from `from` to `to` (SVG line + a small triangular arrowhead polygon at `to`, rotated to the line\'s angle) plus a label bubble with `text`, positioned near the `from` point. Same SVG-overlay approach as measurements.\n\n'
     + '### Highlight Zones\n'
     + 'Each highlight zone is a rectangle (`x,y,w,h` as percentages of the image) with a semi-transparent fill (`color` at `opacity`) and a solid border in `color`. When `shape` is `"ellipse"`, render with `border-radius:50%` (or an SVG ellipse) instead of a rectangle. If `text` is set, show it as a small label chip in the top-left corner of the zone.\n\n'
+    + '### Title Banners\n'
+    + 'Each banner is a headline text overlay centered horizontally over the image at a given `y` percentage (vertical position only — it always spans horizontally centered, not tied to an `x`). Render as a white/near-opaque rounded card (`background: rgba(255,255,255,.94)`, `border-radius`, drop shadow), centered via `left:50%; transform:translate(-50%,-50%); top:{y}%`, capped at roughly `92%` width / `640px` max-width so it never overflows a narrow image. Inside: the `headline` in large bold text colored with the banner\'s own `color`, and — if `subtitle` is non-empty — a smaller muted subtitle line below it wrapped in em dashes (e.g. `"— " + subtitle + " —"`), matching a product-infographic title card (like "ROBUST SIDE STRUCTURE" / "— Strong Support & Anti-Tip Design —"). Give the banner card a z-index above the measurement/callout/highlight overlays so it always reads as the topmost element.\n\n'
+    + (showDimensionSummary ? '### Dimension Summary Card\nRender a single horizontal card centered at the bottom of the image (e.g. `left:50%; bottom:3%; transform:translateX(-50%)`), one per project, built from the pre-computed rows above (already has `icon`/`label`/`value` resolved — no need to re-derive them from the measurements list). Style it as a white rounded card with a solid navy (`#0b3d6b`) tab on the left reading "📏 PRODUCT DIMENSIONS" (two lines, small ruler icon above), followed by one cell per row separated by a thin `1px solid #e5e7eb` divider: a small circular outlined icon (the row\'s `icon` character, e.g. "↔"/"↕"/"↗"), then the `label` in small bold navy uppercase text above the `value` in larger bold dark text below it. IMPORTANT: only build this card if a measurement has a non-empty `value` AND `unit` — measurements without those are pixel-only and should never appear in this card.\n\n' : '')
     + '### Suggested File Structure\n'
     + '```\nannotated-image-project/\n'
     + '  index.html             ← main entry point\n'
@@ -2841,7 +3154,7 @@ function generateClaudeCodeExport() {
     + 'Implement as: **vanilla HTML/CSS/JS** (no build step required). '
     + 'If I ask for a specific framework (React, Vue, etc.), adapt accordingly.\n\n'
     + '---\n'
-    + '_Generated by Annotation Tool. ' + hotspots.length + ' hotspot(s), ' + measurements.length + ' measurement(s), ' + callouts.length + ' callout(s), ' + highlights.length + ' highlight(s)._';
+    + '_Generated by Annotation Tool. ' + hotspots.length + ' hotspot(s), ' + measurements.length + ' measurement(s), ' + callouts.length + ' callout(s), ' + highlights.length + ' highlight(s), ' + banners.length + ' banner(s)._';
 
   return prompt;
 }
@@ -2892,16 +3205,18 @@ function drawHotspotsOnCanvas(canvas, img) {
   measurements.forEach(function(m) {
     var x1 = m.x1 * scaleX, y1 = m.y1 * scaleY, x2 = m.x2 * scaleX, y2 = m.y2 * scaleY;
     var ang = Math.atan2(y2 - y1, x2 - x1);
-    var tickLen = Math.max(6, img.naturalWidth * 0.008);
+    var headLen = Math.max(8, img.naturalWidth * 0.01);
     ctx.save();
     ctx.strokeStyle = m.color; ctx.lineWidth = Math.max(2, img.naturalWidth * 0.0018);
     if (m.lineStyle === 'dashed') { ctx.setLineDash([img.naturalWidth * 0.014, img.naturalWidth * 0.009]); }
     else if (m.lineStyle === 'dotted') { ctx.setLineDash([1, img.naturalWidth * 0.009]); ctx.lineCap = 'round'; }
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     ctx.setLineDash([]); ctx.lineCap = 'butt';
-    [[x1, y1], [x2, y2]].forEach(function(pt) {
-      var tx = Math.cos(ang + Math.PI / 2) * tickLen, ty = Math.sin(ang + Math.PI / 2) * tickLen;
-      ctx.beginPath(); ctx.moveTo(pt[0] - tx, pt[1] - ty); ctx.lineTo(pt[0] + tx, pt[1] + ty); ctx.stroke();
+    ctx.fillStyle = m.color;
+    [[x1, y1, ang + Math.PI], [x2, y2, ang]].forEach(function(pt) {
+      var p1x = pt[0] - headLen * Math.cos(pt[2] - Math.PI / 7), p1y = pt[1] - headLen * Math.sin(pt[2] - Math.PI / 7);
+      var p2x = pt[0] - headLen * Math.cos(pt[2] + Math.PI / 7), p2y = pt[1] - headLen * Math.sin(pt[2] + Math.PI / 7);
+      ctx.beginPath(); ctx.moveTo(pt[0], pt[1]); ctx.lineTo(p1x, p1y); ctx.lineTo(p2x, p2y); ctx.closePath(); ctx.fill();
     });
     var dx = (m.x2 - m.x1) / 100 * img.naturalWidth, dy = (m.y2 - m.y1) / 100 * img.naturalHeight;
     var hasVal = m.value !== undefined && m.value !== null && m.value !== '';
@@ -3004,6 +3319,106 @@ function drawHotspotsOnCanvas(canvas, img) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(String(i + 1), cx, cy);
   });
+
+  banners.forEach(function(bn) {
+    ctx.save();
+    var cy = bn.y * scaleY;
+    var fsH = Math.max(20, img.naturalWidth * 0.026);
+    var fsS = Math.max(12, img.naturalWidth * 0.014);
+    var subtitleText = bn.subtitle ? ('— ' + bn.subtitle + ' —') : '';
+    ctx.font = '800 ' + fsH + 'px system-ui,sans-serif';
+    var headlineW = ctx.measureText(bn.headline).width;
+    ctx.font = '500 ' + fsS + 'px system-ui,sans-serif';
+    var subtitleW = subtitleText ? ctx.measureText(subtitleText).width : 0;
+    var padX = img.naturalWidth * 0.024, padY = img.naturalWidth * 0.014;
+    var contentW = Math.max(headlineW, subtitleW);
+    var boxW = Math.min(img.naturalWidth * 0.92, contentW + padX * 2);
+    var boxH = fsH * 1.2 + (subtitleText ? fsS * 1.3 + padY * 0.5 : 0) + padY * 2;
+    var cx = img.naturalWidth / 2;
+    var boxX = cx - boxW / 2, boxY = cy - boxH / 2;
+    ctx.shadowColor = 'rgba(0,0,0,.2)'; ctx.shadowBlur = img.naturalWidth * 0.02; ctx.shadowOffsetY = img.naturalWidth * 0.006;
+    roundRectPath(ctx, boxX, boxY, boxW, boxH, Math.max(9, img.naturalWidth * 0.012));
+    ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var textY = subtitleText ? boxY + padY + fsH * 0.6 : cy;
+    ctx.font = '800 ' + fsH + 'px system-ui,sans-serif';
+    ctx.fillStyle = bn.color;
+    ctx.fillText(bn.headline, cx, textY);
+    if (subtitleText) {
+      ctx.font = '500 ' + fsS + 'px system-ui,sans-serif';
+      ctx.fillStyle = '#555';
+      ctx.fillText(subtitleText, cx, textY + fsH * 0.6 + padY * 0.5 + fsS * 0.6);
+    }
+    ctx.restore();
+  });
+
+  if (showDimensionSummary) {
+    var dimRows = dimensionSummaryRows();
+    if (dimRows.length) {
+      ctx.save();
+      var fsTitle = Math.max(9, img.naturalWidth * 0.011);
+      var fsIcon = Math.max(11, img.naturalWidth * 0.013);
+      var fsLbl = Math.max(9, img.naturalWidth * 0.0105);
+      var fsVal = Math.max(12, img.naturalWidth * 0.0145);
+      var padX2 = img.naturalWidth * 0.016;
+      var iconR = Math.max(11, img.naturalWidth * 0.013);
+      var gap2 = img.naturalWidth * 0.008;
+      ctx.font = '700 ' + fsTitle + 'px system-ui,sans-serif';
+      var titleW = Math.max(ctx.measureText('PRODUCT').width, ctx.measureText('DIMENSIONS').width) + padX2 * 2;
+      var cellWidths = dimRows.map(function(m) {
+        var lbl = (m.label || 'Size').toUpperCase();
+        var val = m.value + ' ' + unitDisplayText(m.unit, m.value);
+        ctx.font = '700 ' + fsLbl + 'px system-ui,sans-serif';
+        var lw = ctx.measureText(lbl).width;
+        ctx.font = '800 ' + fsVal + 'px system-ui,sans-serif';
+        var vw = ctx.measureText(val).width;
+        return iconR * 2 + gap2 + Math.max(lw, vw) + padX2 * 2;
+      });
+      var cardH = Math.max(fsTitle * 4.2, fsLbl * 1.4 + fsVal * 1.4 + padX2 * 1.6);
+      var cardW = titleW + cellWidths.reduce(function(a, b) { return a + b; }, 0);
+      var cardX = img.naturalWidth / 2 - cardW / 2;
+      var cardY = img.naturalHeight * 0.97 - cardH;
+      var corner = Math.max(8, img.naturalWidth * 0.011);
+      ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = img.naturalWidth * 0.022; ctx.shadowOffsetY = img.naturalWidth * 0.006;
+      roundRectPath(ctx, cardX, cardY, cardW, cardH, corner);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.save();
+      roundRectPath(ctx, cardX, cardY, cardW, cardH, corner);
+      ctx.clip();
+      ctx.fillStyle = '#0b3d6b';
+      ctx.fillRect(cardX, cardY, titleW, cardH);
+      ctx.restore();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      var titleCx = cardX + titleW / 2;
+      ctx.font = (fsTitle * 1.6) + 'px system-ui,sans-serif'; ctx.fillStyle = '#fff';
+      ctx.fillText('📏', titleCx, cardY + cardH / 2 - fsTitle * 1.5);
+      ctx.font = '700 ' + fsTitle + 'px system-ui,sans-serif';
+      ctx.fillText('PRODUCT', titleCx, cardY + cardH / 2 + fsTitle * 0.1);
+      ctx.fillText('DIMENSIONS', titleCx, cardY + cardH / 2 + fsTitle * 1.5);
+      var cx2 = cardX + titleW;
+      dimRows.forEach(function(m, i) {
+        var w = cellWidths[i];
+        ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx2, cardY + 8); ctx.lineTo(cx2, cardY + cardH - 8); ctx.stroke();
+        var iconCx = cx2 + padX2 + iconR, iconCy = cardY + cardH / 2;
+        ctx.beginPath(); ctx.arc(iconCx, iconCy, iconR, 0, Math.PI * 2);
+        ctx.strokeStyle = '#0b3d6b'; ctx.lineWidth = Math.max(1.2, img.naturalWidth * 0.0016); ctx.stroke();
+        ctx.font = fsIcon + 'px system-ui,sans-serif'; ctx.fillStyle = '#0b3d6b';
+        ctx.fillText(dimensionIconFor(m.label), iconCx, iconCy);
+        var textX = iconCx + iconR + gap2;
+        ctx.textAlign = 'left';
+        ctx.font = '700 ' + fsLbl + 'px system-ui,sans-serif'; ctx.fillStyle = '#0b3d6b';
+        ctx.fillText((m.label || 'Size').toUpperCase(), textX, cardY + cardH / 2 - fsVal * 0.55);
+        ctx.font = '800 ' + fsVal + 'px system-ui,sans-serif'; ctx.fillStyle = '#111';
+        ctx.fillText(m.value + ' ' + unitDisplayText(m.unit, m.value), textX, cardY + cardH / 2 + fsLbl * 0.7);
+        ctx.textAlign = 'center';
+        cx2 += w;
+      });
+      ctx.restore();
+    }
+  }
 }
 function flattenOnWhite(canvas) {
   var out = document.createElement('canvas');
@@ -3169,7 +3584,7 @@ function checkViewport() {
   redrawAllAnnotations();
   renderMobileList();
   var mExport = document.getElementById('mnav-export');
-  if (mExport) mExport.disabled = (hotspots.length + measurements.length + callouts.length + highlights.length) === 0 || !backgroundDataURL;
+  if (mExport) mExport.disabled = (hotspots.length + measurements.length + callouts.length + highlights.length + banners.length) === 0 || !backgroundDataURL;
 }
 window.addEventListener('resize', checkViewport);
 checkViewport();
@@ -3277,13 +3692,14 @@ function renderMobileList() {
   var list = document.getElementById('mobile-hotspot-list');
   if (!list) return;
   var html = annotationCardsHTML(true);
-  var total = hotspots.length + measurements.length + callouts.length + highlights.length;
+  var total = hotspots.length + measurements.length + callouts.length + highlights.length + banners.length;
   list.innerHTML = html !== null ? html : '<div class="empty-state" style="padding:1.5rem 0;"><div class="empty-icon">&#9711;</div><div class="empty-title">No annotations yet</div><div class="empty-text">Pick a tool, then tap or drag on your image to add one.</div></div>';
   // Update mobile stats
   document.getElementById('m-stat-hotspots').textContent = hotspots.length;
   document.getElementById('m-stat-measurements').textContent = measurements.length;
   document.getElementById('m-stat-callouts').textContent = callouts.length;
   document.getElementById('m-stat-highlights').textContent = highlights.length;
+  document.getElementById('m-stat-banners').textContent = banners.length;
   // Update nav badge
   document.getElementById('mnav-hotspots-label').textContent = total > 0 ? 'Items (' + total + ')' : 'Items';
 }
@@ -3300,7 +3716,7 @@ var _origUpdateCounter = updateCounter;
 updateCounter = function() {
   _origUpdateCounter();
   var mExport = document.getElementById('mnav-export');
-  if (mExport) mExport.disabled = (hotspots.length + measurements.length + callouts.length + highlights.length) === 0 || !backgroundDataURL;
+  if (mExport) mExport.disabled = (hotspots.length + measurements.length + callouts.length + highlights.length + banners.length) === 0 || !backgroundDataURL;
   renderMobileList();
 };
 
