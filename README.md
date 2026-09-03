@@ -1,6 +1,6 @@
 # Annotation Tool
 
-A single-file, no-build-step tool for turning any image into an annotated, interactive experience — upload a picture, mark it up with hotspots, measurements, callouts, highlight zones, and title banners, and export the result as a standalone page, an embeddable snippet, a flat image, or a ready-to-paste prompt for Claude Code.
+A single-file, no-build-step tool for turning any image into an annotated, interactive experience — upload a picture, mark it up with hotspots, measurements, callouts, highlight zones, and title banners, and export the result as a standalone page, an embeddable snippet, a flat image, or a ready-to-paste prompt for Claude Code. A second mode turns two images into a draggable **before/after comparison slider**.
 
 Everything runs entirely in the browser. There's no server, no dependencies, and no build process — `index.html` is the whole app.
 
@@ -28,6 +28,10 @@ All five types coexist on one image, each with its own color (and, for highlight
   - **Embed code** — a drop-in snippet you can paste into any existing page.
   - **Image** — a flat image with every annotation drawn on, for docs or social sharing. Pick the format: **WebP**, **JPEG**, **PNG**, or **GIF**. GIF is encoded by a small built-in GIF89a/LZW encoder (no external library) using a fixed 256-color palette, so it may show some color banding — use WebP or PNG for full-fidelity color.
   - **Claude Code prompt** — your full annotation data, image, and build instructions, ready to paste into Claude Code to implement in any framework.
+
+## Before & After slider
+
+A separate mode from the annotation tool, switched via the **Annotate / Before & After** pill in the header. Upload a **before** image and an **after** image (drag-and-drop or tap to browse, same validation as the main uploader) and get an interactive comparison slider: drag the handle (mouse, touch, or pen — Pointer Events again) to reveal more or less of the before image over the after image, with "BEFORE"/"AFTER" corner labels. Uses `clip-path` on the before image rather than resizing it, so nothing distorts as you drag. "Change before"/"Change after" swap either image without starting over; "Reset both" clears both. Exports as a **standalone HTML file** or an **embed snippet** (own compact export modal, since there's no annotation data or flat-image concept here) — both fully self-contained with the images embedded as base64 and the same drag behavior working in the exported page.
 
 ## Responsive design
 
