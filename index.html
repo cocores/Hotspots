@@ -655,8 +655,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
   </div>
   <div class="baftr-preview-wrap" id="baftr-preview-wrap" style="display:none;">
     <div class="baftr-slider" id="baftr-slider">
-      <img class="baftr-img-after" id="baftr-img-after" src="" alt="After">
-      <img class="baftr-img-before" id="baftr-img-before" src="" alt="Before">
+      <img class="baftr-img-after" id="baftr-img-after" src="" alt="After" draggable="false">
+      <img class="baftr-img-before" id="baftr-img-before" src="" alt="Before" draggable="false">
       <div class="baftr-handle" id="baftr-handle">
         <div class="baftr-handle-line"></div>
         <div class="baftr-handle-grip">&#8596;</div>
@@ -1077,7 +1077,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       <button class="modal-close" onclick="closeBaftrExport()">&#10005;</button>
     </div>
     <div class="modal-body">
-      <div class="export-tabs" style="grid-template-columns:repeat(2,1fr);">
+      <div class="export-tabs" style="grid-template-columns:repeat(3,1fr);">
         <button class="export-tab active" id="baftr-tab-html" onclick="switchBaftrExportTab('html')">
           <span class="export-tab-icon">&#128196;</span>
           <div><div class="export-tab-title">HTML File</div><div class="export-tab-desc">Standalone page</div></div>
@@ -1086,9 +1086,14 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
           <span class="export-tab-icon">&lt;/&gt;</span>
           <div><div class="export-tab-title">Embed Code</div><div class="export-tab-desc">Paste into any page</div></div>
         </button>
+        <button class="export-tab" id="baftr-tab-mini" onclick="switchBaftrExportTab('mini')">
+          <span class="export-tab-icon">&#9889;</span>
+          <div><div class="export-tab-title">Minified</div><div class="export-tab-desc">Under 4000 chars</div></div>
+        </button>
       </div>
       <div id="baftr-export-info-html" class="export-info-bar"><span class="export-info-icon">i</span>Self-contained <code>.html</code> file with both images embedded and a working drag slider.</div>
       <div id="baftr-export-info-embed" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Drop-in snippet. Paste anywhere in your page <code>&lt;body&gt;</code>.</div>
+      <div id="baftr-export-info-mini" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Heavily minified — inline styles, no CSS classes — kept under 4000 characters excluding your embedded images (which stay fully embedded, so it still displays with no hosting needed). <span id="baftr-mini-char-count"></span></div>
       <div id="baftr-export-preview" class="export-code"></div>
     </div>
     <div class="modal-footer">
@@ -1326,16 +1331,19 @@ function baftrResetAll() {
     return ((e.clientX - rect.left) / rect.width) * 100;
   }
   slider.addEventListener('pointerdown', function(e) {
+    e.preventDefault();
     dragging = true;
     setBaftrPos(posFromEvent(e));
     try { slider.setPointerCapture(e.pointerId); } catch (err) {}
   });
   slider.addEventListener('pointermove', function(e) {
     if (!dragging) return;
+    e.preventDefault();
     setBaftrPos(posFromEvent(e));
   });
   slider.addEventListener('pointerup', function() { dragging = false; });
   slider.addEventListener('pointercancel', function() { dragging = false; });
+  slider.addEventListener('dragstart', function(e) { e.preventDefault(); });
 })();
 
 function clampTooltip(el) {
@@ -3176,10 +3184,10 @@ function downloadExport() {
 
 function openBaftrExport() {
   baftrExportTab = 'html';
-  document.getElementById('baftr-tab-html').classList.add('active');
-  document.getElementById('baftr-tab-embed').classList.remove('active');
-  document.getElementById('baftr-export-info-html').style.display = 'flex';
-  document.getElementById('baftr-export-info-embed').style.display = 'none';
+  ['html', 'embed', 'mini'].forEach(function(t) {
+    document.getElementById('baftr-tab-' + t).classList.toggle('active', t === 'html');
+    document.getElementById('baftr-export-info-' + t).style.display = t === 'html' ? 'flex' : 'none';
+  });
   document.getElementById('baftr-download-btn').textContent = '↓ Download .html';
   refreshBaftrExportPreview();
   document.getElementById('baftr-export-modal').style.display = 'flex';
@@ -3188,20 +3196,31 @@ function closeBaftrExport() { document.getElementById('baftr-export-modal').styl
 function closeBaftrExportOnOverlay(e) { if (e.target === document.getElementById('baftr-export-modal')) closeBaftrExport(); }
 function switchBaftrExportTab(tab) {
   baftrExportTab = tab;
-  document.getElementById('baftr-tab-html').classList.toggle('active', tab === 'html');
-  document.getElementById('baftr-tab-embed').classList.toggle('active', tab === 'embed');
-  document.getElementById('baftr-export-info-html').style.display = tab === 'html' ? 'flex' : 'none';
-  document.getElementById('baftr-export-info-embed').style.display = tab === 'embed' ? 'flex' : 'none';
-  document.getElementById('baftr-download-btn').textContent = tab === 'html' ? '↓ Download .html' : '↓ Download snippet';
+  ['html', 'embed', 'mini'].forEach(function(t) {
+    document.getElementById('baftr-tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('baftr-export-info-' + t).style.display = t === tab ? 'flex' : 'none';
+  });
+  document.getElementById('baftr-download-btn').textContent = tab === 'embed' ? '↓ Download snippet' : '↓ Download .html';
   refreshBaftrExportPreview();
 }
 function getBaftrActiveCode() {
-  return baftrExportTab === 'html' ? generateBaftrExportHTML() : generateBaftrEmbedCode();
+  if (baftrExportTab === 'html') return generateBaftrExportHTML();
+  if (baftrExportTab === 'embed') return generateBaftrEmbedCode();
+  return generateBaftrMinifiedExportHTML();
 }
 function refreshBaftrExportPreview() {
   var code = getBaftrActiveCode();
   var preview = document.getElementById('baftr-export-preview');
   preview.textContent = code.length > 4000 ? code.substring(0, 4000) + '\n\n... (truncated — full content on copy)' : code;
+  if (baftrExportTab === 'mini') {
+    var imageLen = (baftrBeforeURL || '').length + (baftrAfterURL || '').length;
+    var budget = code.length - imageLen;
+    var countEl = document.getElementById('baftr-mini-char-count');
+    var over = budget > 4000;
+    countEl.textContent = budget + ' / 4000 characters (excluding embedded images)' + (over ? ' — over target' : '');
+    countEl.style.color = over ? '#ff4d2e' : '';
+    countEl.style.fontWeight = over ? '700' : '';
+  }
 }
 function copyBaftrExport() {
   var btn = document.getElementById('baftr-copy-btn');
@@ -3213,7 +3232,7 @@ function copyBaftrExport() {
 }
 function downloadBaftrExport() {
   var code = getBaftrActiveCode();
-  var filename = baftrExportTab === 'html' ? 'before-after.html' : 'before-after-embed.html';
+  var filename = baftrExportTab === 'html' ? 'before-after.html' : baftrExportTab === 'embed' ? 'before-after-embed.html' : 'before-after-mini.html';
   var blob = new Blob([code], { type: 'text/html' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
@@ -3225,8 +3244,8 @@ function downloadBaftrExport() {
 function baftrCSS(prefix) {
   var p = prefix || '';
   return '.' + p + 'baftr-slider{position:relative;display:inline-block;max-width:100%;line-height:0;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3);cursor:ew-resize;user-select:none;touch-action:none}'
-    + '.' + p + 'baftr-img-after{display:block;max-width:100%}'
-    + '.' + p + 'baftr-img-before{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}'
+    + '.' + p + 'baftr-img-after{display:block;max-width:100%;-webkit-user-drag:none;user-select:none}'
+    + '.' + p + 'baftr-img-before{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;user-select:none}'
     + '.' + p + 'baftr-handle{position:absolute;top:0;bottom:0;left:50%;width:0;transform:translateX(-50%);pointer-events:none}'
     + '.' + p + 'baftr-handle-line{position:absolute;top:0;bottom:0;left:0;width:3px;background:#fff;transform:translateX(-50%);box-shadow:0 0 10px rgba(0,0,0,.5)}'
     + '.' + p + 'baftr-handle-grip{position:absolute;top:50%;left:0;width:42px;height:42px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 4px 16px rgba(0,0,0,.4);color:#222}'
@@ -3238,10 +3257,11 @@ function baftrSliderJS(prefix, idAttr) {
   return 'function setPos(p){p=Math.max(0,Math.min(100,p));b.style.clipPath="inset(0 "+(100-p)+"% 0 0)";h.style.left=p+"%";}\n'
     + 'function posFromEvent(e){return ((e.clientX-s.getBoundingClientRect().left)/s.getBoundingClientRect().width)*100;}\n'
     + 'var dragging=false;\n'
-    + 's.addEventListener("pointerdown",function(e){dragging=true;setPos(posFromEvent(e));try{s.setPointerCapture(e.pointerId);}catch(err){}});\n'
-    + 's.addEventListener("pointermove",function(e){if(!dragging)return;setPos(posFromEvent(e));});\n'
+    + 's.addEventListener("pointerdown",function(e){e.preventDefault();dragging=true;setPos(posFromEvent(e));try{s.setPointerCapture(e.pointerId);}catch(err){}});\n'
+    + 's.addEventListener("pointermove",function(e){if(!dragging)return;e.preventDefault();setPos(posFromEvent(e));});\n'
     + 's.addEventListener("pointerup",function(){dragging=false;});\n'
     + 's.addEventListener("pointercancel",function(){dragging=false;});\n'
+    + 's.addEventListener("dragstart",function(e){e.preventDefault();});\n'
     + 'setPos(50);';
 }
 function generateBaftrExportHTML() {
@@ -3257,8 +3277,8 @@ function generateBaftrExportHTML() {
     + '})();';
   return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Before &amp; After</title>\n<style>\n' + css + '\n</style>\n</head>\n<body>\n'
     + '<div class="baftr-slider" id="baftr-slider">\n'
-    + '  <img class="baftr-img-after" src="' + afterURL + '" alt="After">\n'
-    + '  <img class="baftr-img-before" id="baftr-img-before" src="' + beforeURL + '" alt="Before">\n'
+    + '  <img class="baftr-img-after" src="' + afterURL + '" alt="After" draggable="false">\n'
+    + '  <img class="baftr-img-before" id="baftr-img-before" src="' + beforeURL + '" alt="Before" draggable="false">\n'
     + '  <div class="baftr-handle" id="baftr-handle"><div class="baftr-handle-line"></div><div class="baftr-handle-grip">&#8596;</div></div>\n'
     + '  <div class="baftr-label baftr-label-before">BEFORE</div>\n'
     + '  <div class="baftr-label baftr-label-after">AFTER</div>\n'
@@ -3280,14 +3300,41 @@ function generateBaftrEmbedCode() {
     + '<style>\n' + css + '\n</style>\n'
     + '<div id="' + uid + '">\n'
     + '  <div class="' + p + 'baftr-slider" id="' + uid + '-slider">\n'
-    + '    <img class="' + p + 'baftr-img-after" src="' + afterURL + '" alt="After">\n'
-    + '    <img class="' + p + 'baftr-img-before" id="' + uid + '-imgbefore" src="' + beforeURL + '" alt="Before">\n'
+    + '    <img class="' + p + 'baftr-img-after" src="' + afterURL + '" alt="After" draggable="false">\n'
+    + '    <img class="' + p + 'baftr-img-before" id="' + uid + '-imgbefore" src="' + beforeURL + '" alt="Before" draggable="false">\n'
     + '    <div class="' + p + 'baftr-handle" id="' + uid + '-handle"><div class="' + p + 'baftr-handle-line"></div><div class="' + p + 'baftr-handle-grip">&#8596;</div></div>\n'
     + '    <div class="' + p + 'baftr-label ' + p + 'baftr-label-before">BEFORE</div>\n'
     + '    <div class="' + p + 'baftr-label ' + p + 'baftr-label-after">AFTER</div>\n'
     + '  </div>\n'
     + '</div>\n'
     + '<script>\n' + js + '\n<\/script>';
+}
+function generateBaftrMinifiedExportHTML() {
+  var beforeURL = baftrBeforeURL || '';
+  var afterURL = baftrAfterURL || '';
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Before & After</title></head>'
+    + '<body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh">'
+    + '<div id="s" style="position:relative;display:inline-block;max-width:95vw;max-height:90vh;line-height:0;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3);cursor:ew-resize;user-select:none;touch-action:none">'
+    + '<img id="a" src="' + afterURL + '" draggable="false" style="display:block;max-width:95vw;max-height:90vh;-webkit-user-drag:none;user-select:none">'
+    + '<img id="b" src="' + beforeURL + '" draggable="false" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none;user-select:none;clip-path:inset(0 50% 0 0)">'
+    + '<div id="h" style="position:absolute;top:0;bottom:0;left:50%;width:0;transform:translateX(-50%);pointer-events:none">'
+    + '<div style="position:absolute;top:0;bottom:0;left:0;width:3px;background:#fff;transform:translateX(-50%);box-shadow:0 0 10px rgba(0,0,0,.5)"></div>'
+    + '<div style="position:absolute;top:50%;left:0;width:42px;height:42px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 4px 16px rgba(0,0,0,.4);color:#222">&#8596;</div>'
+    + '</div>'
+    + '<div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;letter-spacing:.6px;padding:4px 10px;border-radius:6px;pointer-events:none">BEFORE</div>'
+    + '<div style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;letter-spacing:.6px;padding:4px 10px;border-radius:6px;pointer-events:none">AFTER</div>'
+    + '</div>'
+    + '<script>'
+    + 'var s=document.getElementById("s"),b=document.getElementById("b"),h=document.getElementById("h"),g=false;'
+    + 'function P(e){return(e.clientX-s.getBoundingClientRect().left)/s.getBoundingClientRect().width*100}'
+    + 'function U(p){p=Math.max(0,Math.min(100,p));b.style.clipPath="inset(0 "+(100-p)+"% 0 0)";h.style.left=p+"%"}'
+    + 's.onpointerdown=function(e){e.preventDefault();g=true;U(P(e));try{s.setPointerCapture(e.pointerId)}catch(x){}};'
+    + 's.onpointermove=function(e){if(g){e.preventDefault();U(P(e))}};'
+    + 's.onpointerup=function(){g=false};'
+    + 's.onpointercancel=function(){g=false};'
+    + 's.ondragstart=function(e){e.preventDefault()};'
+    + 'U(50);'
+    + '<\/script></body></html>';
 }
 
 function generateMinifiedExportHTML() {
