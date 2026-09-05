@@ -1093,7 +1093,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.6}
       </div>
       <div id="baftr-export-info-html" class="export-info-bar"><span class="export-info-icon">i</span>Self-contained <code>.html</code> file with both images embedded and a working drag slider.</div>
       <div id="baftr-export-info-embed" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Drop-in snippet. Paste anywhere in your page <code>&lt;body&gt;</code>.</div>
-      <div id="baftr-export-info-mini" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Heavily minified — inline styles, no CSS classes — kept under 4000 characters excluding your embedded images (which stay fully embedded, so it still displays with no hosting needed). <span id="baftr-mini-char-count"></span></div>
+      <div id="baftr-export-info-mini" class="export-info-bar" style="display:none;"><span class="export-info-icon">i</span>Heavily minified — inline styles, no CSS classes — kept under 4000 characters excluding your embedded images (which stay fully embedded, so it still displays with no hosting needed). The images themselves are also auto-resized and re-compressed for this export to keep the file small. <span id="baftr-mini-char-count"></span></div>
       <div id="baftr-export-preview" class="export-code"></div>
     </div>
     <div class="modal-footer">
@@ -1113,6 +1113,7 @@ var banners = [];
 var tool = 'hotspot'; // 'hotspot' | 'measure' | 'callout' | 'highlight' | 'banner'
 var appMode = 'annotate'; // 'annotate' | 'baftr'
 var baftrBeforeURL = null, baftrAfterURL = null, baftrPos = 50;
+var baftrBeforeMiniURL = null, baftrAfterMiniURL = null;
 var baftrExportTab = 'html';
 var previewMode = false;
 var pendingX = 0, pendingY = 0;
@@ -1308,6 +1309,32 @@ function renderBaftrPreview() {
   document.getElementById('baftr-img-after').src = baftrAfterURL;
   setBaftrPos(50);
   document.getElementById('baftr-export-btn').disabled = false;
+  baftrBeforeMiniURL = null; baftrAfterMiniURL = null;
+  baftrDownscaleForMini(baftrBeforeURL, function(url) { baftrBeforeMiniURL = url; baftrMaybeRefreshMiniPreview(); });
+  baftrDownscaleForMini(baftrAfterURL, function(url) { baftrAfterMiniURL = url; baftrMaybeRefreshMiniPreview(); });
+}
+function baftrDownscaleForMini(dataURL, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var maxDim = 600, quality = 0.5;
+    var scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+    var w = Math.max(1, Math.round(img.naturalWidth * scale));
+    var h = Math.max(1, Math.round(img.naturalHeight * scale));
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    try { cb(canvas.toDataURL('image/jpeg', quality)); } catch (err) { cb(dataURL); }
+  };
+  img.onerror = function() { cb(dataURL); };
+  img.src = dataURL;
+}
+function baftrMaybeRefreshMiniPreview() {
+  if (baftrExportTab === 'mini' && document.getElementById('baftr-export-modal').style.display !== 'none') {
+    refreshBaftrExportPreview();
+  }
 }
 function setBaftrPos(pos) {
   baftrPos = Math.max(0, Math.min(100, pos));
@@ -1317,6 +1344,7 @@ function setBaftrPos(pos) {
 function baftrResetAll() {
   if ((baftrBeforeURL || baftrAfterURL) && !confirm('Reset both images?')) return;
   baftrBeforeURL = null; baftrAfterURL = null; baftrPos = 50;
+  baftrBeforeMiniURL = null; baftrAfterMiniURL = null;
   document.getElementById('baftr-before-input').value = '';
   document.getElementById('baftr-after-input').value = '';
   document.getElementById('baftr-upload-row').style.display = 'flex';
@@ -3213,7 +3241,7 @@ function refreshBaftrExportPreview() {
   var preview = document.getElementById('baftr-export-preview');
   preview.textContent = code.length > 4000 ? code.substring(0, 4000) + '\n\n... (truncated — full content on copy)' : code;
   if (baftrExportTab === 'mini') {
-    var imageLen = (baftrBeforeURL || '').length + (baftrAfterURL || '').length;
+    var imageLen = (baftrBeforeMiniURL || baftrBeforeURL || '').length + (baftrAfterMiniURL || baftrAfterURL || '').length;
     var budget = code.length - imageLen;
     var countEl = document.getElementById('baftr-mini-char-count');
     var over = budget > 4000;
@@ -3310,8 +3338,8 @@ function generateBaftrEmbedCode() {
     + '<script>\n' + js + '\n<\/script>';
 }
 function generateBaftrMinifiedExportHTML() {
-  var beforeURL = baftrBeforeURL || '';
-  var afterURL = baftrAfterURL || '';
+  var beforeURL = baftrBeforeMiniURL || baftrBeforeURL || '';
+  var afterURL = baftrAfterMiniURL || baftrAfterURL || '';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Before & After</title></head>'
     + '<body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh">'
     + '<div id="s" style="position:relative;display:inline-block;max-width:95vw;max-height:90vh;line-height:0;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3);cursor:ew-resize;user-select:none;touch-action:none">'
